@@ -4,7 +4,7 @@ import { ArrowRight, Ban, Brain, Check, Coins, Database, FileCheck2, Loader2, Pl
 import type { ClientState } from "@/lib/types";
 import { ModeBadge } from "./ui";
 import { ReceiptGame } from "./ReceiptGame";
-import { computeQuests } from "@/lib/quests";
+import { computeQuests, REWARDS } from "@/lib/quests";
 
 type Key = "fit" | "person" | "timing";
 const RECEIPTS: { key: Key; name: string; q: string; icon: typeof Target; evidence: string; source: string; conf: number }[] = [
@@ -237,6 +237,16 @@ export function Landing({ state, busy, onDemo, onGameXp }: { state: ClientState;
           <div className="eyebrow">Quests</div>
           <h2 className="display mt-3 text-5xl">Earn XP by doing the real work.</h2>
           <p className="mt-3 max-w-xl text-lg" style={{ color: "var(--muted)" }}>Progress is read from this workspace, so nothing unlocks unless you actually did it.</p>
+          <div className="mt-6 grid max-w-2xl grid-cols-2 border bg-white" style={{ borderColor: "var(--line)" }}>
+            {REWARDS.map((r, i) => (
+              <div key={r.id} className={`p-4 ${i ? "border-l" : ""}`} style={{ borderColor: "var(--line)" }}>
+                <div className="eyebrow">Redeem · {r.xp.toLocaleString()} XP</div>
+                <div className="mt-1 text-xl font-medium tracking-tight">{r.label}</div>
+                <div className="barcode mt-2 w-24" />
+              </div>
+            ))}
+          </div>
+          <p className="mt-2 text-xs" style={{ color: "var(--muted)" }}>Redeem from the quest log in the top bar. Requests are recorded now and fulfilled once a rewards partner is connected.</p>
           <div className="mt-8 grid border-l border-t sm:grid-cols-2 lg:grid-cols-4" style={{ borderColor: "var(--line)" }}>
             {computeQuests(state).map((q) => (
               <div key={q.id} className={`group border-b border-r p-4 text-left transition-colors ${q.done ? "bg-emerald-50" : "bg-white hover:bg-[#fffdf7]"}`} style={{ borderColor: "var(--line)" }}>

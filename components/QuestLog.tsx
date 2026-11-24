@@ -1,9 +1,9 @@
 "use client";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useEffect, useRef, useState } from "react";
-import { Check, Lock, Trophy, X, Zap } from "lucide-react";
+import { Check, Gift, Lock, Trophy, X, Zap } from "lucide-react";
 import type { ClientState } from "@/lib/types";
-import { computeQuests, levelFor, XP_PER_LEVEL, type Quest } from "@/lib/quests";
+import { computeQuests, levelFor, REDEEM_KEY, REWARDS, XP_PER_LEVEL, type Quest, type Redemption } from "@/lib/quests";
 
 export function Confetti({ count = 28 }: { count?: number }) {
   const colors = ["#059669", "#f59e0b", "#2563eb", "#e11d48", "#7c3aed", "#171717"];
@@ -22,6 +22,16 @@ export function QuestLog({ state, gameXp }: { state: ClientState; gameXp: number
   const lv = levelFor(xp);
   const doneCount = quests.filter((q) => q.done).length;
   const [open, setOpen] = useState(false);
+  const [redemptions, setRedemptions] = useState<Redemption[]>([]);
+  useEffect(() => { try { setRedemptions(JSON.parse(window.localStorage.getItem(REDEEM_KEY) || "[]")); } catch {} }, []);
+  const spent = redemptions.reduce((n, r) => n + r.xp, 0);
+  const balance = Math.max(0, xp - spent);
+  const redeem = (r: (typeof REWARDS)[number]) => {
+    if (balance < r.xp) return;
+    const next = [...redemptions, { id: `${r.id}-${Date.now()}`, rewardId: r.id, label: r.label, xp: r.xp, ts: new Date().toISOString() }];
+    setRedemptions(next);
+    window.localStorage.setItem(REDEEM_KEY, JSON.stringify(next));
+  };
   const [toasts, setToasts] = useState<Quest[]>([]);
   const seen = useRef<Set<string> | null>(null);
 
@@ -64,6 +74,30 @@ export function QuestLog({ state, gameXp }: { state: ClientState; gameXp: number
               <div className="flex items-baseline justify-between"><span className="text-sm font-semibold">Level {lv.level}: {lv.rank}</span><span className="font-mono text-xs text-neutral-600">{lv.into}/{XP_PER_LEVEL} XP</span></div>
               <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-white"><div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-rose-500 transition-all duration-700" style={{ width: `${lv.pct}%` }} /></div>
               <p className="mt-1.5 text-[11px] text-neutral-600">XP comes from real actions in the console{gameXp ? `, plus ${gameXp} XP from Receipt Check` : " and from the Receipt Check game"}.</p>
+            </div>
+            <div className="mt-3 border border-neutral-200 p-3">
+              <div className="flex items-center gap-2 text-sm font-semibold"><Gift size={15} /> Redeem XP <span className="ml-auto font-mono text-xs font-normal text-neutral-600">{balance.toLocaleString()} XP available</span></div>
+              <ul className="mt-2 space-y-2">
+                {REWARDS.map((r) => {
+                  const can = balance >= r.xp;
+                  return (
+                    <li key={r.id}>
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="font-medium">{r.label}</span>
+                        <span className="font-mono text-xs text-neutral-500">{r.xp.toLocaleString()} XP</span>
+                        <button onClick={() => redeem(r)} disabled={!can} className={`ml-auto px-2.5 py-1 text-xs font-semibold ${can ? "bg-[#131313] text-white hover:bg-[#333]" : "cursor-not-allowed bg-neutral-100 text-neutral-400"}`}>{can ? "Redeem" : `${(r.xp - balance).toLocaleString()} XP to go`}</button>
+                      </div>
+                      <div className="mt-1 h-1.5 bg-neutral-100"><div className="h-full bg-[#f6dc5c] transition-all duration-700" style={{ width: `${Math.min(100, (balance / r.xp) * 100)}%` }} /></div>
+                    </li>
+                  );
+                })}
+              </ul>
+              {redemptions.length > 0 && (
+                <ul className="mt-2 space-y-1 border-t border-neutral-200 pt-2">
+                  {redemptions.map((r) => <li key={r.id} className="flex items-center gap-2 text-xs"><span className="bg-amber-100 px-1.5 font-semibold text-amber-800">REQUESTED</span>{r.label}<span className="ml-auto font-mono text-neutral-500">-{r.xp.toLocaleString()} XP</span></li>)}
+                </ul>
+              )}
+              <p className="mt-2 text-[11px] text-neutral-500">Redeeming records a request. Gift cards are not issued yet: fulfilment starts once a rewards partner is connected.</p>
             </div>
             <ul className="mt-3 space-y-1.5">
               {quests.map((q) => (

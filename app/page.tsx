@@ -17,6 +17,7 @@ import { AgentFeed } from "@/components/AgentFeed";
 import { CreditMeter } from "@/components/CreditMeter";
 import { Landing } from "@/components/Landing";
 import { QuestLog } from "@/components/QuestLog";
+import { DemoVideo } from "@/components/DemoVideo";
 import { GAME_XP_KEY } from "@/components/ReceiptGame";
 import { ActorBadge, btn, btnPrimary, card, ModeBadge, time } from "@/components/ui";
 
@@ -31,6 +32,7 @@ export default function Home() {
   const [view, setViewState] = useState<"product" | "console">("product");
   const [tab, setTab] = useState<string>("intake");
   const [gameXp, setGameXp] = useState(0);
+  const [video, setVideo] = useState(false);
   useEffect(() => { setGameXp(Number(window.localStorage.getItem(GAME_XP_KEY) || 0)); }, []);
   const [openLead, setOpenLead] = useState<string | null>(null);
   const [wall, setWall] = useState(false);
@@ -96,7 +98,7 @@ export default function Home() {
     return r.ok;
   };
   const runDemo = async () => {
-    setView("console"); setIntake(DEMO_INTAKE); setTab("intake"); setFeedOpen(true);
+    setView("console"); setVideo(true); setIntake(DEMO_INTAKE); setTab("intake"); setFeedOpen(true);
     if (!(await generateIcp(DEMO_INTAKE, true))) return;
     if (!(await discover())) return;
     const res = await fetch("/api/state", { cache: "no-store" }).then((r) => r.json());
@@ -230,6 +232,8 @@ export default function Home() {
 
         <ReviewDrawer lead={lead} onClose={() => setOpenLead(null)} enriching={enriching} onEnrich={enrich}
           onReview={(leadId, messageId, action, body, subject) => api("/api/review", "POST", { leadId, messageId, action, body, subject })} />
+
+        <DemoVideo open={video} onClose={() => setVideo(false)} pipelineBusy={working} />
 
         <Dialog.Root open={wall} onOpenChange={setWall}>
           <Dialog.Portal>

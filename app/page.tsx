@@ -3,7 +3,7 @@ import * as Tabs from "@radix-ui/react-tabs";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2, Lock, Play, RotateCcw } from "lucide-react";
+import { LayoutDashboard, Loader2, Lock, Play, Receipt, RotateCcw, Sparkles } from "lucide-react";
 import type { ClientState, Icp, Intake, Lead, Stage } from "@/lib/types";
 import { DEMO_INTAKE } from "@/lib/mock";
 import { IntakeForm } from "@/components/IntakeForm";
@@ -15,6 +15,7 @@ import { Charts } from "@/components/Charts";
 import { GraphView } from "@/components/GraphView";
 import { AgentFeed } from "@/components/AgentFeed";
 import { CreditMeter } from "@/components/CreditMeter";
+import { Landing } from "@/components/Landing";
 import { ActorBadge, btn, btnPrimary, card, ModeBadge, time } from "@/components/ui";
 
 const EMPTY: Intake = { name: "", product: "", customers: "", pricing: "" };
@@ -25,6 +26,7 @@ export default function Home() {
   const [intake, setIntake] = useState<Intake>(EMPTY);
   const [busy, setBusy] = useState<string | null>(null);
   const [enriching, setEnriching] = useState<string | null>(null);
+  const [view, setViewState] = useState<"product" | "console">("product");
   const [tab, setTab] = useState<string>("intake");
   const [openLead, setOpenLead] = useState<string | null>(null);
   const [wall, setWall] = useState(false);
@@ -61,6 +63,10 @@ export default function Home() {
     return () => clearInterval(t);
   }, [working, api]);
 
+  // Product page first; the console lives behind its own tab. The choice is kept in the URL hash.
+  useEffect(() => { if (window.location.hash === "#console") setViewState("console"); }, []);
+  const setView = (v: "product" | "console") => { setViewState(v); window.history.replaceState(null, "", v === "console" ? "#console" : "#"); window.scrollTo({ top: 0 }); };
+
   const fail = (r: { error?: string }) => setError(r.error ?? "Something went wrong");
 
   const generateIcp = async (v: Intake, reset = false) => {
@@ -86,7 +92,7 @@ export default function Home() {
     return r.ok;
   };
   const runDemo = async () => {
-    setIntake(DEMO_INTAKE); setTab("intake"); setFeedOpen(true);
+    setView("console"); setIntake(DEMO_INTAKE); setTab("intake"); setFeedOpen(true);
     if (!(await generateIcp(DEMO_INTAKE, true))) return;
     if (!(await discover())) return;
     const res = await fetch("/api/state", { cache: "no-store" }).then((r) => r.json());
@@ -104,7 +110,23 @@ export default function Home() {
 
   return (
     <Tooltip.Provider>
-      <div className="flex min-h-screen">
+      <nav className="sticky top-0 z-30 flex items-center gap-4 border-b border-neutral-200 bg-white/90 px-6 py-2 backdrop-blur">
+        <button className="flex items-center gap-2 font-serif text-xl font-bold tracking-tight" onClick={() => setView("product")}><Receipt size={20} /> Receipts</button>
+        <div role="tablist" aria-label="View" className="flex rounded-lg bg-neutral-100 p-1">
+          {([["product", "Product", Sparkles], ["console", "Console", LayoutDashboard]] as const).map(([v, label, Icon]) => (
+            <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${view === v ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500 hover:text-neutral-900"}`}>
+              <Icon size={14} /> {label}
+              {v === "console" && working && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />}
+              {v === "console" && !working && state.leads.length > 0 && <span className="rounded-full bg-neutral-200 px-1.5 text-[11px] text-neutral-700">{state.leads.length}</span>}
+            </button>
+          ))}
+        </div>
+        <span className="ml-auto hidden text-xs text-neutral-500 sm:block">No receipt, no outreach.</span>
+        {view === "product" && <button className={btnPrimary} onClick={() => setView("console")}>Open console</button>}
+      </nav>
+      {view === "product" && <Landing state={state} busy={working} onDemo={runDemo} onConsole={() => setView("console")} />}
+      <div className={view === "console" ? "flex min-h-screen" : "hidden"}>
         <div className="min-w-0 flex-1">
           <header className="border-b-2 border-neutral-900 px-6 pb-4 pt-5">
             <div className="flex flex-wrap items-end justify-between gap-4">

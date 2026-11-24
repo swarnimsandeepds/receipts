@@ -13,7 +13,7 @@ export function AgentFeed({ feed, open, onOpenChange, running }: { feed: FeedEve
   useEffect(() => { end.current?.scrollIntoView({ block: "nearest" }); }, [feed.length]);
   return (
     <Collapsible.Root open={open} onOpenChange={onOpenChange} className={`shrink-0 border-l border-neutral-200 bg-neutral-50 ${open ? "w-80" : "w-10"}`}>
-      <div className="sticky top-0 flex h-screen flex-col">
+      <div className="sticky top-[3.25rem] flex h-[calc(100vh-3.25rem)] flex-col">
         <Collapsible.Trigger className="flex items-center gap-2 border-b border-neutral-200 px-2.5 py-2.5 text-left hover:bg-neutral-100" aria-label="Toggle agent feed">
           <ChevronRight size={16} className={`shrink-0 transition-transform ${open ? "" : "rotate-180"}`} />
           {open && <span className="text-sm font-semibold">Agent thinking</span>}

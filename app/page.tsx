@@ -150,7 +150,7 @@ export default function Home() {
                 <CreditMeter state={state} onTopUp={() => api("/api/billing", "POST")} />
               </div>
             </div>
-            {busy && <p className="mt-2 flex items-center gap-2 text-sm text-neutral-600"><Loader2 size={14} className="animate-spin" /> {busy === "icp" ? "Generating ICP" : busy === "discovery" ? "Running discovery: search, receipt gate, Moss index, graph queries, scoring" : "Enriching top leads and drafting outreach"}</p>}
+            {busy && <p className="mt-2 flex items-center gap-2 text-sm text-neutral-600"><Loader2 size={14} className="animate-spin" /> {busy === "icp" ? "Generating ICP" : busy === "discovery" ? "Running discovery: dataset scan, receipt gate, Moss index, graph queries, scoring" : "Enriching top leads and drafting outreach"}</p>}
             {error && <p className="mt-2 rounded bg-rose-50 px-3 py-1.5 text-sm text-rose-800">{error}</p>}
           </header>
 

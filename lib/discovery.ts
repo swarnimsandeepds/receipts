@@ -1,80 +1,14 @@
-// Discovery: Tavily search -> LLM extraction -> receipt gate -> Moss index -> graph queries -> scoring.
-import { z } from "zod";
-import { llmJson } from "./llm";
+// Discovery: seeded account dataset -> receipt gate -> Moss index -> graph queries -> scoring.
+// There is no web search provider. Accounts and signals come from the seeded dataset in lib/mock.ts.
 import { MOCK_COMPANIES, MOCK_COMPETITORS, MOCK_CUSTOMER_PEOPLE, MOCK_QUERIES } from "./mock";
 import { audit, feed, getState, mutate, sleep, uid } from "./store";
 import { indexSignals, queryCompany, type MossDoc } from "./moss";
 import { buildGraph, customersOf, displacementTargets, warmIntroPath } from "./graph";
 import { composite, intentScore } from "./scoring";
 import { meter } from "./billing";
-import type { Competitor, HeldBack, Icp, Intake, Lead, Mode, RawCompany, Signal } from "./types";
+import type { Competitor, HeldBack, Icp, Lead, RawCompany, Signal } from "./types";
 
 const RANK: Record<string, number> = { funding: 4, launch: 3, hiring: 2, job_post: 2, news: 1 };
-interface Snippet { title: string; url: string; content: string; date?: string; query: string }
-
-function buildQueries(intake: Intake, icp: Icp): string[] {
-  const ind = icp.industries.slice(0, 2).map((i) => i.name);
-  const segs = icp.adjacentSegments.filter((s) => s.status === "accepted").map((s) => s.name);
-  return [
-    `${ind[0]} startups raised funding round`,
-    `${ind[1] ?? ind[0]} companies hiring ${icp.personas[0]?.title ?? "engineers"}`,
-    `${icp.triggers[0]?.event ?? "product launch"} ${ind[0]}`,
-    ...(segs[0] ? [`${segs[0]} company launch OR funding`] : []),
-    `${intake.name} competitors alternatives pricing`,
-  ];
-}
-
-async function search(queries: string[]): Promise<{ snippets: Snippet[]; mode: Mode }> {
-  if (!process.env.TAVILY_API_KEY) return { snippets: [], mode: "mock" };
-  try {
-    const { tavily } = await import("@tavily/core");
-    const client = tavily({ apiKey: process.env.TAVILY_API_KEY });
-    const snippets: Snippet[] = [];
-    for (const q of queries) {
-      const t0 = performance.now();
-      const res = await client.search(q, { maxResults: 6, searchDepth: "basic", timeout: 20 });
-      for (const r of res.results) snippets.push({ title: r.title, url: r.url, content: (r.content ?? "").slice(0, 700), date: r.publishedDate, query: q });
-      feed("search", `Tavily: "${q}" returned ${res.results.length} results`, { mode: "live", ms: Math.round(performance.now() - t0) });
-    }
-    if (!snippets.length) throw new Error("no results");
-    return { snippets, mode: "live" };
-  } catch (e) {
-    feed("info", `Tavily failed (${e instanceof Error ? e.message.slice(0, 80) : "error"}). Using cached results.`, { mode: "mock" });
-    return { snippets: [], mode: "mock" };
-  }
-}
-
-const RawSchema = z.object({
-  companies: z.array(z.object({
-    name: z.string(), domain: z.string(), industry: z.string(), employees: z.coerce.number().catch(0), description: z.string(),
-    sourceUrl: z.string(), sourceTitle: z.string(), fitConfidence: z.coerce.number().min(0).max(1), fitReason: z.string(),
-    negativeSignalMatched: z.string().nullable().optional(), usesCompetitor: z.string().nullable().optional(),
-    signals: z.array(z.object({ type: z.enum(["funding", "hiring", "launch", "job_post", "news"]).catch("news"), text: z.string(), sourceUrl: z.string(), sourceTitle: z.string(), date: z.string().catch("") })),
-    contact: z.object({ name: z.string(), title: z.string() }).nullable().optional(),
-  })).min(3),
-  competitors: z.array(z.object({ name: z.string(), positioning: z.string(), pricingTier: z.string(), differentiators: z.array(z.string()), sourceUrl: z.string() })).min(1),
-});
-
-async function extract(intake: Intake, icp: Icp, snippets: Snippet[]): Promise<{ companies: RawCompany[]; competitors: Competitor[]; mode: Mode; error?: string }> {
-  const mock = () => ({ companies: MOCK_COMPANIES, competitors: MOCK_COMPETITORS });
-  if (!snippets.length) return { ...mock(), mode: "mock" };
-  const urls = new Set(snippets.map((s) => s.url));
-  const r = await llmJson({
-    schema: RawSchema,
-    system: "You extract target accounts from web search results for a B2B sales team. Use only facts in the snippets. Every sourceUrl must be copied exactly from a snippet URL. Never invent a URL, person or signal.",
-    prompt: `Seller: ${intake.name}. ${intake.product}\nICP: ${JSON.stringify({ industries: icp.industries, companySize: icp.companySize, personas: icp.personas.map((p) => p.title), triggers: icp.triggers.map((t) => t.event), negativeSignals: icp.negativeSignals.map((n) => n.signal) })}\n\nSearch results:\n${snippets.map((s, i) => `[${i + 1}] ${s.title}\nURL: ${s.url}\nDate: ${s.date ?? "unknown"}\n${s.content}`).join("\n\n")}\n\nReturn JSON: { "companies": [10 to 15 distinct companies that could buy from the seller, not the seller itself and not news publishers. Each: name, domain, industry, employees (number, 0 if unknown), description, sourceUrl, sourceTitle, fitConfidence 0 to 1, fitReason, negativeSignalMatched (exact text of an ICP negative signal the company matches, or null), usesCompetitor (name or null), signals (trigger signals found in snippets: type one of funding|hiring|launch|job_post|news, text, sourceUrl, sourceTitle, date as YYYY-MM-DD or empty), contact (name and title of a person named in the snippets who fits a persona, or null)], "competitors": [exactly 3 competitors of the seller: name, positioning, pricingTier, differentiators (3 strings), sourceUrl (a snippet URL, or empty string if none)] }`,
-    mock: () => ({ companies: [], competitors: [] }) as never,
-  });
-  if (r.mode === "mock" || !r.data.companies?.length) return { ...mock(), mode: "mock", error: r.error };
-  // Drop any citation the model did not copy from a real search result.
-  const companies: RawCompany[] = r.data.companies.map((c) => ({
-    ...c, sourceUrl: urls.has(c.sourceUrl) ? c.sourceUrl : "",
-    signals: c.signals.filter((s) => urls.has(s.sourceUrl)).map((s) => ({ ...s, date: s.date || new Date().toISOString().slice(0, 10) })),
-    contact: c.contact ? { ...c.contact, previousEmployers: [] } : null,
-  }));
-  return { companies, competitors: r.data.competitors.slice(0, 3), mode: "live" };
-}
-
 function personaMatch(title: string, icp: Icp): number {
   const t = title.toLowerCase();
   const keys = ["ai", "ml", "cto", "engineering", "product", "founder", "technology", "platform", "data", "ceo", "technical"];
@@ -87,22 +21,18 @@ export async function runDiscovery(): Promise<void> {
   const s0 = getState();
   if (!s0.intake || !s0.icp) throw new Error("Generate an ICP first");
   const intake = s0.intake, icp = s0.icp;
-  const mockPace = async () => { if (!process.env.TAVILY_API_KEY) await sleep(350); };
+  const pace = () => sleep(350);
   mutate((s) => { s.running = "discovery"; s.leads = []; s.heldBack = []; s.competitors = []; s.displacement = []; });
   try {
-    // 1. Search
-    const queries = process.env.TAVILY_API_KEY ? buildQueries(intake, icp) : MOCK_QUERIES;
-    feed("info", `Discovery started for ${intake.name}: ${queries.length} searches planned.`);
-    const { snippets, mode: searchMode } = await search(queries);
-    if (searchMode === "mock") for (const q of MOCK_QUERIES) { feed("search", `Search (cached): "${q}"`, { mode: "mock" }); await mockPace(); }
+    // 1. Scan the seeded account dataset
+    feed("info", `Discovery started for ${intake.name}: scanning the account dataset with ${MOCK_QUERIES.length} queries.`);
+    for (const q of MOCK_QUERIES) { feed("search", `Dataset query: "${q}"`, { mode: "mock" }); await pace(); }
 
-    // 2. Extract companies and competitor map
-    const ex = await extract(intake, icp, snippets);
-    if (ex.error) feed("info", `LLM extraction fell back to cached data: ${ex.error}`, { mode: "mock" });
-    feed("llm", `Extracted ${ex.companies.length} companies and ${ex.competitors.length} competitors with structured output.`, { mode: ex.mode });
-    const demoData = ex.companies === MOCK_COMPANIES;
-    mutate((s) => { s.modes.search = demoData ? "mock" : searchMode; s.modes.extract = ex.mode; s.competitors = ex.competitors; s.people = demoData ? MOCK_CUSTOMER_PEOPLE : []; });
-    await mockPace();
+    // 2. Load companies and the competitor map
+    const ex: { companies: RawCompany[]; competitors: Competitor[] } = { companies: MOCK_COMPANIES, competitors: MOCK_COMPETITORS };
+    feed("info", `Loaded ${ex.companies.length} companies and ${ex.competitors.length} competitors from the seeded dataset.`, { mode: "mock" });
+    mutate((s) => { s.modes.search = "mock"; s.modes.extract = undefined; s.competitors = ex.competitors; s.people = MOCK_CUSTOMER_PEOPLE; });
+    await pace();
 
     // 3. Receipt gate: no receipt, no outreach
     const leads: Lead[] = [];
@@ -137,7 +67,7 @@ export async function runDiscovery(): Promise<void> {
     });
     mutate((s) => { s.leads = leads; s.heldBack = held; });
     feed("info", `Receipt gate: ${leads.length} leads have all three receipts, ${held.length} held back.`);
-    await mockPace();
+    await pace();
 
     // 4. Moss: index every signal and company snippet
     const docs: MossDoc[] = ex.companies.flatMap((c, i) => [

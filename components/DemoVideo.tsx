@@ -23,11 +23,11 @@ const SCENES: { title: string; caption: string; body: ReactNode }[] = [
     ),
   },
   {
-    title: "2. Discover", caption: "The agent searches for accounts and trigger signals. Every result keeps its source link.",
+    title: "2. Discover", caption: "The agent scans its account dataset for trigger signals. Every result keeps its source link.",
     body: (
       <div className="space-y-2">
         {["voice AI agent startups funding round", "hiring retrieval engineer voice agent", "launch real time agent assist copilot"].map((q, i) => (
-          <Row key={q} delay={i * 700} className="flex items-center gap-3 border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm"><span className="font-mono text-xs text-sky-400">SEARCH</span><span className="text-neutral-200">&ldquo;{q}&rdquo;</span><span className="ml-auto font-mono text-xs text-neutral-500">6 results</span></Row>
+          <Row key={q} delay={i * 700} className="flex items-center gap-3 border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm"><span className="font-mono text-xs text-sky-400">QUERY</span><span className="text-neutral-200">&ldquo;{q}&rdquo;</span><span className="ml-auto font-mono text-xs text-neutral-500">6 results</span></Row>
         ))}
         <Row delay={2400} className="bg-white px-3 py-2 text-sm text-neutral-900">Larkspur Voice raised an $18M Series A <span className="text-xs text-blue-700 underline">source ↗</span></Row>
         <Row delay={3000} className="bg-white px-3 py-2 text-sm text-neutral-900">Tandem Desk launched Live Assist <span className="text-xs text-blue-700 underline">source ↗</span></Row>

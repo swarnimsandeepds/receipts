@@ -20,7 +20,7 @@ export function AgentFeed({ feed, open, onOpenChange, running }: { feed: FeedEve
           {open && running && <span className="ml-auto flex items-center gap-1 text-[11px] text-emerald-700"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" /> working</span>}
         </Collapsible.Trigger>
         <Collapsible.Content className="min-h-0 flex-1 overflow-y-auto p-2">
-          {feed.length === 0 && <p className="p-2 text-xs text-neutral-500">Each step the agent takes shows up here: searches, Moss retrievals with timing, graph queries, leads held back, credits spent.</p>}
+          {feed.length === 0 && <p className="p-2 text-xs text-neutral-500">Each step the agent takes shows up here: dataset queries, Moss retrievals with timing, graph queries, leads held back, credits spent.</p>}
           <ol className="space-y-1.5">
             {feed.map((f) => {
               const Icon = ICON[f.kind] ?? Info;

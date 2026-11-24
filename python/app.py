@@ -35,7 +35,7 @@ def client_state():
     with LOCK:
         m = lambda b: "live" if b else "mock"  # noqa: E731
         snapshot = {**STATE, "graph": core.build_graph(), "integrations": {
-            "LLM": m(pipeline.llm_configured()), "Tavily": m(core.env("TAVILY_API_KEY")), "Hunter": m(core.env("HUNTER_API_KEY")),
+            "LLM": m(pipeline.llm_configured()),
             "Moss": m(moss_index.configured()), "Flexprice": m(core.env("FLEXPRICE_API_KEY"))}}
         return json.loads(json.dumps(snapshot))  # deep copy while holding the lock
 
@@ -186,7 +186,7 @@ MOCK_PAGE = """<!doctype html><html lang="en"><head><meta charset="utf-8"><meta 
 <style>body{{font-family:system-ui,sans-serif;max-width:42rem;margin:0 auto;padding:2.5rem;color:#171717}}.b{{display:inline-block;background:#fef3c7;color:#92400e;font-size:.75rem;font-weight:500;padding:.15rem .5rem;border-radius:.25rem}}
 h1{{font-family:Georgia,serif;font-size:1.9rem;margin:1rem 0 .25rem}}.m{{color:#737373;font-size:.875rem}}.t{{font-size:1.125rem;line-height:1.7;margin-top:1.5rem}}</style></head>
 <body><div class="b">Mock source: seeded demo data, not a real article</div><h1>{title}</h1><p class="m">{meta}</p><p class="t">{text}</p>
-<p class="m" style="margin-top:2.5rem">With TAVILY_API_KEY set, citations link to the live web pages Tavily returned.</p></body></html>"""
+<p class="m" style="margin-top:2.5rem">Accounts and signals in this demo come from a seeded dataset, so citations open this local page.</p></body></html>"""
 
 
 class Handler(BaseHTTPRequestHandler):

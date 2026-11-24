@@ -22,7 +22,7 @@ Worth 20 minutes next week to compare notes?`;
 
 const STEPS = [
   { icon: Brain, title: "Define", line: "Describe what you sell.", body: "One prompt turns your product, customers and pricing into an ICP: industries with NAICS codes, size range, buyer personas, trigger events and negative signals. Every field is editable and carries a confidence score." },
-  { icon: Search, title: "Discover", line: "Find accounts with a reason.", body: "The agent searches the web for target accounts and trigger signals such as funding, hiring, launches and job posts. Every company and every signal keeps its source link." },
+  { icon: Search, title: "Discover", line: "Find accounts with a reason.", body: "The agent scans its account dataset for target accounts and trigger signals such as funding, hiring, launches and job posts. Every company and every signal keeps its source link." },
   { icon: FileCheck2, title: "Prove", line: "Three receipts or nothing.", body: "FIT, PERSON and TIMING each need a source. A lead missing any one of them goes to Held back with the reason, and the agent is not allowed to draft for it." },
   { icon: Database, title: "Retrieve", line: "Ground every draft in Moss.", body: "Every snippet and signal is indexed in Moss. When the agent scores or drafts for a company it pulls that company's top signals in a few milliseconds, and shows you the timing." },
   { icon: Share2, title: "Connect", line: "Find the warm path.", body: "A knowledge graph of companies, people, competitors and signals answers two questions: who can introduce us, and who is using a competitor we can displace." },

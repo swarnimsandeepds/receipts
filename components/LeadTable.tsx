@@ -16,7 +16,7 @@ export function LeadTable({ state, onOpen, onEnrich, enriching }: { state: Clien
         <div className="mb-2 flex flex-wrap items-center gap-2">
           <h2 className="font-serif text-xl font-semibold">Qualified leads</h2>
           <span className="text-sm text-neutral-500">{leads.length} with all three receipts</span>
-          <ModeBadge mode={modes.search} label="Search" /><ModeBadge mode={modes.extract} label="LLM" /><ModeBadge mode={modes.moss} label="Moss" />
+          {modes.search && <span className="bg-neutral-200 px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide text-neutral-700">Seeded dataset</span>}<ModeBadge mode={modes.moss} label="Moss" />
         </div>
         <div className={`${card} overflow-x-auto`}>
           <table className="w-full border-collapse text-[13px]">

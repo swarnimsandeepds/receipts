@@ -1,4 +1,4 @@
-"""LLM helper, ICP generation, discovery pipeline with the receipt gate, enrichment and outreach."""
+"""LLM helper, ICP generation, discovery over the seeded dataset with the receipt gate, enrichment and outreach."""
 import json
 import re
 import time
@@ -73,66 +73,6 @@ def generate_icp(intake):
 RANK = {"funding": 4, "launch": 3, "hiring": 2, "job_post": 2, "news": 1}
 
 
-def _search(queries):
-    """Tavily web search. Returns (snippets, mode)."""
-    if not env("TAVILY_API_KEY"):
-        return [], "mock"
-    try:
-        snippets = []
-        for q in queries:
-            t0 = time.perf_counter()
-            r = _post("https://api.tavily.com/search", {"query": q, "max_results": 6, "search_depth": "basic"},
-                      {"Authorization": "Bearer " + env("TAVILY_API_KEY")}, timeout=25)
-            for x in r.get("results", []):
-                snippets.append({"title": x.get("title", ""), "url": x.get("url", ""), "content": (x.get("content") or "")[:700], "date": x.get("published_date")})
-            feed("search", f'Tavily: "{q}" returned {len(r.get("results", []))} results', mode="live", ms=round((time.perf_counter() - t0) * 1000))
-        if not snippets:
-            raise ValueError("no results")
-        return snippets, "live"
-    except Exception as e:  # noqa: BLE001
-        feed("info", f"Tavily failed ({str(e)[:80]}). Using cached results.", mode="mock")
-        return [], "mock"
-
-
-def _extract(intake, icp, snippets):
-    """LLM structured extraction of companies and competitors. Returns (companies, competitors, mode, error, is_demo_data)."""
-    if not snippets:
-        return mock.mock_companies(), mock.MOCK_COMPETITORS, "mock", None, True
-    urls = {s["url"] for s in snippets}
-    icp_brief = {"industries": icp["industries"], "companySize": icp["companySize"], "personas": [p["title"] for p in icp["personas"]],
-                 "triggers": [t["event"] for t in icp["triggers"]], "negativeSignals": [n["signal"] for n in icp["negativeSignals"]]}
-    results = "\n\n".join(f"[{i + 1}] {s['title']}\nURL: {s['url']}\nDate: {s['date'] or 'unknown'}\n{s['content']}" for i, s in enumerate(snippets))
-    data, mode, err = llm_json(
-        "You extract target accounts from web search results for a B2B sales team. Use only facts in the snippets. Every sourceUrl must be copied exactly from a snippet URL. Never invent a URL, person or signal.",
-        f"Seller: {intake['name']}. {intake['product']}\nICP: {json.dumps(icp_brief)}\n\nSearch results:\n{results}\n\n"
-        'Return JSON: { "companies": [10 to 15 distinct companies that could buy from the seller, not the seller itself and not news publishers. Each: name, domain, industry, '
-        "employees (number, 0 if unknown), description, sourceUrl, sourceTitle, fitConfidence 0 to 1, fitReason, negativeSignalMatched (exact text of an ICP negative signal the company matches, or null), "
-        "usesCompetitor (name or null), signals (trigger signals found in snippets: type one of funding|hiring|launch|job_post|news, text, sourceUrl, sourceTitle, date as YYYY-MM-DD or empty), "
-        'contact (name and title of a person named in the snippets who fits a persona, or null)], "competitors": [exactly 3 competitors of the seller: name, positioning, pricingTier, '
-        "differentiators (3 strings), sourceUrl (a snippet URL, or empty string if none)] }",
-        ["companies", "competitors"], lambda: None)
-    if mode == "mock" or not data or len(data.get("companies") or []) < 3:
-        return mock.mock_companies(), mock.MOCK_COMPETITORS, "mock", err, True
-    companies = []
-    try:
-        for c in data["companies"]:
-            contact = c.get("contact")
-            companies.append({
-                "name": str(c["name"]), "domain": str(c.get("domain") or ""), "industry": str(c.get("industry") or ""), "employees": int(float(c.get("employees") or 0)),
-                "description": str(c.get("description") or ""), "sourceTitle": str(c.get("sourceTitle") or ""), "fitConfidence": max(0.0, min(1.0, float(c.get("fitConfidence") or 0))),
-                "fitReason": str(c.get("fitReason") or ""), "negativeSignalMatched": c.get("negativeSignalMatched") or None, "usesCompetitor": c.get("usesCompetitor") or None,
-                # Drop any citation the model did not copy from a real search result.
-                "sourceUrl": c.get("sourceUrl") if c.get("sourceUrl") in urls else "",
-                "signals": [{"type": s.get("type") if s.get("type") in RANK else "news", "text": str(s.get("text") or ""), "sourceUrl": s["sourceUrl"],
-                             "sourceTitle": str(s.get("sourceTitle") or ""), "date": s.get("date") or time.strftime("%Y-%m-%d")}
-                            for s in (c.get("signals") or []) if s.get("sourceUrl") in urls],
-                "contact": {"name": contact["name"], "title": contact.get("title") or "", "previousEmployers": []} if contact and contact.get("name") else None,
-            })
-        return companies, data["competitors"][:3], "live", None, False
-    except Exception as e:  # noqa: BLE001
-        return mock.mock_companies(), mock.MOCK_COMPETITORS, "mock", str(e)[:200], True
-
-
 def _persona_match(title, icp):
     t = title.lower()
     keys = {"ai", "ml", "cto", "engineering", "product", "founder", "technology", "platform", "data", "ceo", "technical"}
@@ -146,36 +86,25 @@ def run_discovery():
     intake, icp = STATE["intake"], STATE["icp"]
     if not intake or not icp:
         raise ValueError("Generate an ICP first")
-    live_search = bool(env("TAVILY_API_KEY"))
-    pace = (lambda: None) if live_search else (lambda: time.sleep(0.35))
+    pace = lambda: time.sleep(0.35)  # noqa: E731
     with LOCK:
         STATE.update(running="discovery", leads=[], heldBack=[], competitors=[], displacement=[])
         save()
     try:
-        # 1. Search
-        if live_search:
-            ind = [i["name"] for i in icp["industries"][:2]]
-            segs = [s["name"] for s in icp["adjacentSegments"] if s["status"] == "accepted"]
-            queries = [f"{ind[0]} startups raised funding round", f"{ind[-1]} companies hiring {icp['personas'][0]['title']}",
-                       f"{icp['triggers'][0]['event']} {ind[0]}"] + ([f"{segs[0]} company launch OR funding"] if segs else []) + [f"{intake['name']} competitors alternatives pricing"]
-        else:
-            queries = mock.MOCK_QUERIES
-        feed("info", f"Discovery started for {intake['name']}: {len(queries)} searches planned.")
-        snippets, search_mode = _search(queries)
-        if search_mode == "mock":
-            for q in mock.MOCK_QUERIES:
-                feed("search", f'Search (cached): "{q}"', mode="mock")
-                pace()
+        # 1. Scan the seeded account dataset (there is no web search provider)
+        feed("info", f"Discovery started for {intake['name']}: scanning the account dataset with {len(mock.MOCK_QUERIES)} queries.")
+        for q in mock.MOCK_QUERIES:
+            feed("search", f'Dataset query: "{q}"', mode="mock")
+            pace()
 
-        # 2. Extract companies and the competitor map
-        companies, competitors, ex_mode, err, demo = _extract(intake, icp, snippets)
-        if err:
-            feed("info", f"LLM extraction fell back to cached data: {err}", mode="mock")
-        feed("llm", f"Extracted {len(companies)} companies and {len(competitors)} competitors with structured output.", mode=ex_mode)
+        # 2. Load companies and the competitor map
+        companies, competitors = mock.mock_companies(), mock.MOCK_COMPETITORS
+        feed("info", f"Loaded {len(companies)} companies and {len(competitors)} competitors from the seeded dataset.", mode="mock")
         with LOCK:
-            STATE["modes"].update(search="mock" if demo else search_mode, extract=ex_mode)
+            STATE["modes"]["search"] = "mock"
+            STATE["modes"].pop("extract", None)
             STATE["competitors"] = competitors
-            STATE["people"] = mock.MOCK_CUSTOMER_PEOPLE if demo else []
+            STATE["people"] = mock.MOCK_CUSTOMER_PEOPLE
             save()
         pace()
 
@@ -284,21 +213,13 @@ def run_discovery():
 
 # ---------- 5. Enrichment and outreach ----------
 
-def _hunter(lead):
-    """Hunter email finder. Returns (email, verified, confidence, linkedin, mode)."""
+def _contact(lead):
+    """No email provider is connected, so the address is a pattern guess and always unverified.
+    Returns (email, verified, confidence, linkedin, mode)."""
     parts = re.sub(r"[^a-z ]", "", lead["contact"]["name"].lower()).split()
-    first, last = (parts[0] if parts else ""), (parts[-1] if len(parts) > 1 else "")
+    first, last = (parts[0] if parts else ""), (parts[-1] if len(parts) > 1 else "team")
     linkedin = "https://www.linkedin.com/search/results/people/?keywords=" + urllib.parse.quote(f"{lead['contact']['name']} {lead['company']}")
-    key = env("HUNTER_API_KEY")
-    if key and first and last:
-        try:
-            url = "https://api.hunter.io/v2/email-finder?" + urllib.parse.urlencode({"domain": lead["domain"], "first_name": first, "last_name": last, "api_key": key})
-            d = json.loads(urllib.request.urlopen(url, timeout=12).read()).get("data") or {}
-            if d.get("email"):
-                return d["email"], (d.get("verification") or {}).get("status") == "valid", (d.get("score") or 0) / 100, d.get("linkedin_url") or linkedin, "live"
-        except Exception:
-            pass
-    return f"{first}.{last or 'team'}@{lead['domain']}", not key, 0.9, linkedin, "mock"
+    return f"{first}.{last}@{lead['domain']}", False, 0.5, linkedin, "mock"
 
 
 def enrich_and_draft(lead_id):
@@ -315,8 +236,8 @@ def enrich_and_draft(lead_id):
     if not (r["fit"]["ok"] and r["person"]["ok"] and r["timing"]["ok"] and r["fit"].get("sourceUrl") and r["timing"].get("sourceUrl")):
         return "not_found"
 
-    email, verified, conf, linkedin, e_mode = _hunter(lead)
-    feed("enrich", f"Hunter: {lead['contact']['name']} at {lead['domain']} -> {email} ({'verified' if verified else 'unverified'})", mode=e_mode)
+    email, verified, conf, linkedin, e_mode = _contact(lead)
+    feed("enrich", f"Contact: {lead['contact']['name']} at {lead['domain']} -> {email} (pattern guess, unverified)")
     meter("lead_enriched", lead["id"], lead["company"])
 
     q = moss_index.query_company(lead["company"], f"{r['timing']['summary']} why now", 5)
@@ -350,5 +271,5 @@ def enrich_and_draft(lead_id):
         lead.update(enriched=True, enrichMode=e_mode, outreachMode=s_mode, moss=q, lastActor="AI", lastAction="Drafted outreach",
                     messages=[mk(1, "email", "Email", seq["email1"]), mk(2, "linkedin", "LinkedIn note", seq["linkedin"]), mk(3, "email", "Follow up email", seq["email2"])])
         save()
-    audit("AI", "Lead enriched", f"{lead['company']}: found {email}, drafted 3 messages for review.", lead["id"])
+    audit("AI", "Lead enriched", f"{lead['company']}: contact {email} (unverified), drafted 3 messages for review.", lead["id"])
     return None

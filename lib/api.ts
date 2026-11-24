@@ -13,7 +13,7 @@ export function clientState(): ClientState {
     ...s,
     graph: buildGraph(s),
     integrations: {
-      LLM: m(llmConfigured()), Tavily: m(!!process.env.TAVILY_API_KEY), Hunter: m(!!process.env.HUNTER_API_KEY),
+      LLM: m(llmConfigured()),
       Moss: m(mossConfigured()), Flexprice: m(!!process.env.FLEXPRICE_API_KEY),
     },
   };

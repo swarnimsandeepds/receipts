@@ -28,7 +28,7 @@ export async function enrichAndDraft(leadId: string): Promise<{ ok: true } | { o
   if (!(r.fit.ok && r.person.ok && r.timing.ok && r.fit.sourceUrl && r.timing.sourceUrl)) return { ok: false, error: "not_found" };
 
   const e = await enrichContact(lead);
-  feed("enrich", `Hunter: ${lead.contact.name} at ${lead.domain} -> ${e.email} (${e.verified ? "verified" : "unverified"})`, { mode: e.mode });
+  feed("enrich", `Contact: ${lead.contact.name} at ${lead.domain} -> ${e.email} (pattern guess, unverified)`);
   await meter("lead_enriched", lead.id, lead.company);
 
   const q = await queryCompany(lead.company, `${lead.receipts.timing.summary} why now`, 5);
@@ -58,6 +58,6 @@ export async function enrichAndDraft(leadId: string): Promise<{ ok: true } | { o
     ];
     l.lastActor = "AI"; l.lastAction = "Drafted outreach";
   });
-  audit("AI", "Lead enriched", `${lead.company}: found ${e.email}, drafted 3 messages for review.`, lead.id);
+  audit("AI", "Lead enriched", `${lead.company}: contact ${e.email} (unverified), drafted 3 messages for review.`, lead.id);
   return { ok: true };
 }

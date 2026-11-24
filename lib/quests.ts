@@ -36,8 +36,7 @@ export function levelFor(xp: number) {
 // XP can be exchanged for gift cards. There is no fulfilment partner yet, so a redemption is
 // recorded as a request and nothing is issued automatically.
 export const REWARDS = [
-  { id: "gc25", xp: 10000, label: "$25 Amazon gift card" },
-  { id: "gc50", xp: 20000, label: "$50 Amazon gift card" },
+  { id: "gc10", xp: 10000, label: "$10 Amazon gift card" },
 ];
 export const REDEEM_KEY = "receipts.redemptions";
 export interface Redemption { id: string; rewardId: string; label: string; xp: number; ts: string }

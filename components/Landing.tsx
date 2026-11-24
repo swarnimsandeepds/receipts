@@ -237,7 +237,7 @@ export function Landing({ state, busy, onDemo, onGameXp }: { state: ClientState;
           <div className="eyebrow">Quests</div>
           <h2 className="display mt-3 text-5xl">Earn XP by doing the real work.</h2>
           <p className="mt-3 max-w-xl text-lg" style={{ color: "var(--muted)" }}>Progress is read from this workspace, so nothing unlocks unless you actually did it.</p>
-          <div className="mt-6 grid max-w-2xl grid-cols-2 border bg-white" style={{ borderColor: "var(--line)" }}>
+          <div className="mt-6 grid max-w-xs border bg-white" style={{ borderColor: "var(--line)" }}>
             {REWARDS.map((r, i) => (
               <div key={r.id} className={`p-4 ${i ? "border-l" : ""}`} style={{ borderColor: "var(--line)" }}>
                 <div className="eyebrow">Redeem · {r.xp.toLocaleString()} XP</div>

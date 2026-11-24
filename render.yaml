@@ -1,0 +1,16 @@
+# Render blueprint: deploys the Python backend, which also serves the prebuilt UI.
+services:
+  - type: web
+    name: receipts
+    runtime: python
+    plan: free
+    buildCommand: pip install -r python/requirements.txt
+    startCommand: python python/app.py
+    healthCheckPath: /api/state
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: MOSS_PROJECT_ID
+        sync: false
+      - key: MOSS_PROJECT_KEY
+        sync: false

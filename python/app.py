@@ -257,8 +257,10 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT") or (sys.argv[1] if len(sys.argv) > 1 else 8000))
-    server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
-    print(f"Receipts (Python) running at http://localhost:{port}   Moss: {'live' if moss_index.configured() else 'mock'}")
+    # Hosted platforms (Render and similar) set PORT and need the server reachable from outside the container.
+    host = os.environ.get("HOST") or ("0.0.0.0" if os.environ.get("PORT") else "127.0.0.1")
+    server = ThreadingHTTPServer((host, port), Handler)
+    print(f"Receipts (Python) running at http://{'localhost' if host == '127.0.0.1' else host}:{port}   Moss: {'live' if moss_index.configured() else 'mock'}", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

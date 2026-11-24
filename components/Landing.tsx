@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { ArrowRight, Ban, Brain, Check, Coins, Database, FileCheck2, Loader2, Play, Search, Share2, Target, UserCheck, X, Zap } from "lucide-react";
 import type { ClientState } from "@/lib/types";
 import { ModeBadge } from "./ui";
+import { ReceiptGame } from "./ReceiptGame";
+import { computeQuests } from "@/lib/quests";
 
 type Key = "fit" | "person" | "timing";
 const RECEIPTS: { key: Key; name: string; q: string; icon: typeof Target; evidence: string; source: string; conf: number }[] = [
@@ -85,7 +87,7 @@ function ReceiptDemo() {
   );
 }
 
-export function Landing({ state, busy, onDemo, onConsole }: { state: ClientState; busy: boolean; onDemo: () => void; onConsole: () => void }) {
+export function Landing({ state, busy, onDemo, onConsole, onGameXp }: { state: ClientState; busy: boolean; onDemo: () => void; onConsole: () => void; onGameXp: (xp: number) => void }) {
   const [step, setStep] = useState(0);
   const [auto, setAuto] = useState(true);
   useEffect(() => {
@@ -120,7 +122,43 @@ export function Landing({ state, busy, onDemo, onConsole }: { state: ClientState
           </div>
           <p className="mt-3 text-xs text-neutral-500">The demo uses Moss (moss.dev) as the product being sold and runs the whole pipeline in about 20 seconds.</p>
         </div>
-        <ReceiptDemo />
+        <div className="relative">
+          <span className="anim-bob absolute -left-6 -top-5 z-10 hidden rounded-md border-2 border-emerald-600 bg-white px-2 py-0.5 font-mono text-xs font-black uppercase tracking-widest text-emerald-700 shadow lg:block" style={{ ["--r" as string]: "-10deg" }}>Fit ✓</span>
+          <span className="anim-bob absolute -right-4 top-24 z-10 hidden rounded-md border-2 border-sky-600 bg-white px-2 py-0.5 font-mono text-xs font-black uppercase tracking-widest text-sky-700 shadow lg:block" style={{ ["--r" as string]: "8deg", animationDelay: "1.2s" }}>Person ✓</span>
+          <span className="anim-bob absolute -bottom-4 left-10 z-10 hidden rounded-md border-2 border-amber-600 bg-white px-2 py-0.5 font-mono text-xs font-black uppercase tracking-widest text-amber-700 shadow lg:block" style={{ ["--r" as string]: "-5deg", animationDelay: "2.1s" }}>Timing ✓</span>
+          <ReceiptDemo />
+        </div>
+      </section>
+
+      {/* Game */}
+      <section className="mx-auto max-w-6xl px-6 pb-14">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-rose-600">Mini game</div>
+            <h2 className="font-serif text-3xl font-semibold">Receipt Check: would you send it?</h2>
+            <p className="text-neutral-600">Eight leads, three lives. Build a streak for a score multiplier. Watch for negative signals.</p>
+          </div>
+        </div>
+        <ReceiptGame onXp={onGameXp} onConsole={onConsole} />
+      </section>
+
+      {/* Quests */}
+      <section className="mx-auto max-w-6xl px-6 pb-14">
+        <h2 className="font-serif text-3xl font-semibold">Quests</h2>
+        <p className="text-neutral-600">Earn XP by using the real product. Progress is read from this workspace, so nothing unlocks unless you actually did it.</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {computeQuests(state).map((q) => (
+            <button key={q.id} type="button" onClick={onConsole} className={`group rounded-2xl border p-4 text-left transition-all hover:-translate-y-1 hover:shadow-lg ${q.done ? "border-emerald-300 bg-emerald-50" : "border-neutral-200 bg-white"}`}>
+              <div className="flex items-center justify-between">
+                <span className={`flex h-7 w-7 items-center justify-center rounded-full ${q.done ? "bg-emerald-600 text-white" : "bg-neutral-100 text-neutral-400"}`}>{q.done ? <Check size={14} /> : <Zap size={13} />}</span>
+                <span className={`rounded-full px-2 py-0.5 font-mono text-xs ${q.done ? "bg-emerald-600 text-white" : "bg-amber-100 text-amber-800"}`}>+{q.xp} XP</span>
+              </div>
+              <div className="mt-2 text-sm font-semibold">{q.title}</div>
+              <div className="text-xs text-neutral-600">{q.hint}</div>
+              {q.progress && !q.done && <div className="mt-1 font-mono text-[11px] text-neutral-500">{q.progress}</div>}
+            </button>
+          ))}
+        </div>
       </section>
 
       {/* Live strip */}

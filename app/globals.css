@@ -1,3 +1,20 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Gamified UI animations */
+@keyframes stamp-in { 0% { transform: scale(2.6) rotate(-24deg); opacity: 0; } 60% { transform: scale(0.92) rotate(-9deg); opacity: 1; } 100% { transform: scale(1) rotate(-9deg); opacity: 1; } }
+@keyframes pop-in { 0% { transform: scale(0.6); opacity: 0; } 70% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); } }
+@keyframes slide-up { 0% { transform: translateY(16px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+@keyframes float-up { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-38px); opacity: 0; } }
+@keyframes confetti-fall { 0% { transform: translateY(-10px) rotate(0deg); opacity: 1; } 100% { transform: translateY(340px) rotate(540deg); opacity: 0; } }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-7px); } 40%, 80% { transform: translateX(7px); } }
+@keyframes bob { 0%, 100% { transform: translateY(0) rotate(var(--r, 0deg)); } 50% { transform: translateY(-8px) rotate(var(--r, 0deg)); } }
+.anim-stamp { animation: stamp-in 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+.anim-pop { animation: pop-in 0.35s ease-out both; }
+.anim-slide-up { animation: slide-up 0.35s ease-out both; }
+.anim-float-up { animation: float-up 0.9s ease-out both; }
+.anim-shake { animation: shake 0.4s ease-in-out; }
+.anim-bob { animation: bob 4s ease-in-out infinite; }
+.confetti-piece { position: absolute; top: 0; width: 8px; height: 14px; border-radius: 2px; animation: confetti-fall 1.4s ease-in forwards; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .anim-stamp, .anim-pop, .anim-slide-up, .anim-shake, .anim-bob, .confetti-piece, .anim-float-up { animation: none; } .confetti-piece, .anim-float-up { display: none; } }

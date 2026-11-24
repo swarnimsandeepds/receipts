@@ -16,6 +16,8 @@ import { GraphView } from "@/components/GraphView";
 import { AgentFeed } from "@/components/AgentFeed";
 import { CreditMeter } from "@/components/CreditMeter";
 import { Landing } from "@/components/Landing";
+import { QuestLog } from "@/components/QuestLog";
+import { GAME_XP_KEY } from "@/components/ReceiptGame";
 import { ActorBadge, btn, btnPrimary, card, ModeBadge, time } from "@/components/ui";
 
 const EMPTY: Intake = { name: "", product: "", customers: "", pricing: "" };
@@ -28,6 +30,8 @@ export default function Home() {
   const [enriching, setEnriching] = useState<string | null>(null);
   const [view, setViewState] = useState<"product" | "console">("product");
   const [tab, setTab] = useState<string>("intake");
+  const [gameXp, setGameXp] = useState(0);
+  useEffect(() => { setGameXp(Number(window.localStorage.getItem(GAME_XP_KEY) || 0)); }, []);
   const [openLead, setOpenLead] = useState<string | null>(null);
   const [wall, setWall] = useState(false);
   const [feedOpen, setFeedOpen] = useState(true);
@@ -122,10 +126,10 @@ export default function Home() {
             </button>
           ))}
         </div>
-        <span className="ml-auto hidden text-xs text-neutral-500 sm:block">No receipt, no outreach.</span>
+        <span className="ml-auto"><QuestLog state={state} gameXp={gameXp} /></span>
         {view === "product" && <button className={btnPrimary} onClick={() => setView("console")}>Open console</button>}
       </nav>
-      {view === "product" && <Landing state={state} busy={working} onDemo={runDemo} onConsole={() => setView("console")} />}
+      {view === "product" && <Landing state={state} busy={working} onDemo={runDemo} onConsole={() => setView("console")} onGameXp={setGameXp} />}
       <div className={view === "console" ? "flex min-h-screen" : "hidden"}>
         <div className="min-w-0 flex-1">
           <header className="border-b-2 border-neutral-900 px-6 pb-4 pt-5">

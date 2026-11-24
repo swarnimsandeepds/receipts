@@ -87,9 +87,19 @@ function ReceiptDemo() {
   );
 }
 
-export function Landing({ state, busy, onDemo, onConsole, onGameXp }: { state: ClientState; busy: boolean; onDemo: () => void; onConsole: () => void; onGameXp: (xp: number) => void }) {
+const STRIP = ["#5aa9e6", "#e0457b", "#f6dc5c", "#131313", "#c9c5ba", "#5aa9e6", "#e0457b", "#f6dc5c", "#4b4842", "#c9c5ba", "#a9d4f2", "#ee8fb0", "#faeb9e", "#8a867b", "#c9c5ba", "#cfe6f7", "#f3c3d4", "#fcf3c4", "#c9c5ba", "#b5b1a6"];
+// Fictional seeded accounts, shown as label cards until a real run fills the workspace.
+const SAMPLE_LABELS = [
+  { name: "Larkspur Voice", tag: "VOICE AI", tier: "A", score: 99 }, { name: "Quillon AI", tag: "SALES COPILOT", tier: "A", score: 93 },
+  { name: "Tandem Desk", tag: "SUPPORT", tier: "A", score: 92 }, { name: "Corvid Labs", tag: "VOICE AI", tier: "A", score: 81 },
+  { name: "Northfold", tag: "VOICE AI", tier: "B", score: 74 }, { name: "Sablewood", tag: "INSURANCE", tier: "B", score: 68 },
+  { name: "Halcyon CX", tag: "CONTACT CENTER", tier: "B", score: 65 }, { name: "Pellucid", tag: "MEETINGS", tier: "B", score: 54 },
+];
+
+export function Landing({ state, busy, onDemo, onGameXp }: { state: ClientState; busy: boolean; onDemo: () => void; onGameXp: (xp: number) => void }) {
   const [step, setStep] = useState(0);
   const [auto, setAuto] = useState(true);
+  const [paused, setPaused] = useState(false);
   useEffect(() => {
     if (!auto) return;
     const t = setInterval(() => setStep((s) => (s + 1) % STEPS.length), 3500);
@@ -100,135 +110,159 @@ export function Landing({ state, busy, onDemo, onConsole, onGameXp }: { state: C
   const avgMs = mossMs.length ? (mossMs.reduce((a, b) => a + b, 0) / mossMs.length).toFixed(1) : null;
   const hasRun = state.leads.length > 0 || state.heldBack.length > 0;
   const stats = [
-    { label: "Leads with 3 receipts", value: hasRun ? String(state.leads.length) : "0" },
-    { label: "Held back", value: hasRun ? String(state.heldBack.length) : "0" },
+    { label: "Leads with 3 receipts", value: String(state.leads.length) },
+    { label: "Held back", value: String(state.heldBack.length) },
     { label: "Avg Moss retrieval", value: avgMs ? `${avgMs} ms` : "n/a" },
     { label: "Messages approved", value: String(state.leads.reduce((n, l) => n + l.messages.filter((m) => m.status === "approved").length, 0)) },
   ];
+  const labels = hasRun
+    ? state.leads.slice(0, 10).map((l) => ({ name: l.company, tag: l.industry.split(" ").slice(0, 2).join(" ").toUpperCase(), tier: l.tier as string, score: l.score }))
+    : SAMPLE_LABELS;
   const S = STEPS[step];
-  const cta = "inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60";
 
   return (
-    <div className="bg-gradient-to-b from-amber-50/60 via-white to-white">
+    <div>
       {/* Hero */}
-      <section className="mx-auto grid max-w-6xl items-center gap-10 px-6 pb-14 pt-12 lg:grid-cols-2">
-        <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs text-neutral-600"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> AI go-to-market engine, retrieval by Moss <ModeBadge mode={state.integrations.Moss} /></div>
-          <h1 className="mt-5 font-serif text-6xl font-bold leading-[1.02] tracking-tight">No receipt,<br />no outreach.</h1>
-          <p className="mt-5 max-w-lg text-lg text-neutral-600">Receipts is a sales agent that has to show its work. It only drafts a message when it can prove three things with a source: why this account, why this person, and why today.</p>
-          <div className="mt-7 flex flex-wrap gap-3">
-            <button className={`${cta} bg-neutral-900 text-white hover:bg-neutral-700`} onClick={onDemo} disabled={busy}>{busy ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />} Run the live demo</button>
-            <button className={`${cta} border border-neutral-300 bg-white text-neutral-900 hover:bg-neutral-50`} onClick={onConsole}>Open console <ArrowRight size={16} /></button>
+      <section className="relative px-6 pb-16 pt-20 text-center">
+        <span className="crop tl" /><span className="crop tr" />
+        <h1 className="display mx-auto max-w-5xl text-6xl md:text-8xl">
+          No <span className="hl">receipt</span><FileCheck2 className="mx-2 inline-block h-12 w-12 align-baseline md:h-16 md:w-16" strokeWidth={1.5} />,<br />no outreach.
+        </h1>
+        <p className="mx-auto mt-7 max-w-xl text-lg" style={{ color: "var(--muted)" }}>Receipts is a sales agent that has to show its work. It only drafts a message when it can prove three things with a source: why this account, why this person, and why today.</p>
+        <div className="mt-8 flex flex-wrap justify-center gap-2">
+          <button className="btn-ink" onClick={onDemo} disabled={busy}>{busy ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />} Run the live demo <ArrowRight size={15} /></button>
+        </div>
+        <div className="mx-auto mt-8 w-56 border bg-white p-2.5 text-left" style={{ borderColor: "var(--line)" }}>
+          <div className="flex items-center gap-2">
+            <span className="flex h-7 w-7 items-center justify-center bg-emerald-600 text-white"><Database size={14} /></span>
+            <span><span className="eyebrow block leading-none">Retrieval by</span><span className="text-sm font-semibold">Moss</span></span>
+            <span className="ml-auto"><ModeBadge mode={state.integrations.Moss} /></span>
           </div>
-          <p className="mt-3 text-xs text-neutral-500">The demo uses Moss (moss.dev) as the product being sold and runs the whole pipeline in about 20 seconds.</p>
+          <div className="mt-2 flex items-end gap-2"><div className="barcode flex-1" /><span className="eyebrow">{avgMs ? `${avgMs} MS` : "MS · P50"}</span></div>
+        </div>
+      </section>
+
+      {/* Colour strip and label marquee */}
+      <div className="flex h-2">{STRIP.map((c, i) => <span key={i} className="flex-1" style={{ background: c }} />)}</div>
+      <section className="overflow-hidden border-b" style={{ background: "var(--band)", borderColor: "var(--line)" }}>
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3 text-sm">
+          <span className="font-semibold tracking-tight">{hasRun ? "Accounts with all three receipts" : "Sample accounts the demo finds"}</span>
+          <button className="eyebrow underline underline-offset-4" onClick={() => setPaused((p) => !p)}>{paused ? "Play" : "Pause"}</button>
+        </div>
+        <div className={`marquee ${paused ? "paused" : ""}`}>
+          {[...labels, ...labels].map((l, i) => (
+            <div key={i} className="w-52 shrink-0 border-r bg-white p-3 text-left transition-colors hover:bg-[#fffdf7]" style={{ borderColor: "var(--line)" }} aria-hidden={i >= labels.length}>
+              <div className="flex items-start justify-between"><span className="truncate text-lg font-medium tracking-tight">{l.name}</span><span className={`ml-2 shrink-0 px-1 text-[10px] font-bold text-white ${l.tier === "A" ? "bg-emerald-600" : l.tier === "B" ? "bg-amber-500" : "bg-neutral-400"}`}>{l.tier}</span></div>
+              <div className="barcode mt-2" />
+              <div className="mt-1 flex justify-between"><span className="eyebrow truncate">{l.tag}</span><span className="eyebrow">{l.score}</span></div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Live numbers */}
+      <section className="mx-auto grid max-w-6xl grid-cols-2 border-x border-b md:grid-cols-4" style={{ borderColor: "var(--line)" }}>
+        {stats.map((s, i) => (
+          <div key={s.label} className={`p-5 ${i > 0 ? "md:border-l" : ""}`} style={{ borderColor: "var(--line)" }}>
+            <div className="display text-4xl tabular-nums">{s.value}</div>
+            <div className="eyebrow mt-1">{s.label}</div>
+          </div>
+        ))}
+      </section>
+
+      {/* The gate */}
+      <section className="mx-auto grid max-w-6xl items-center gap-10 px-6 py-20 lg:grid-cols-2">
+        <div>
+          <div className="eyebrow">The gate</div>
+          <h2 className="display mt-3 text-5xl">Three receipts,<br />or the agent stays quiet.</h2>
+          <p className="mt-5 max-w-md text-lg" style={{ color: "var(--muted)" }}>Every lead has to pass the same check. Toggle a receipt on the card and watch the agent unlock or refuse the draft.</p>
+          <ul className="mt-6 space-y-0 border-t" style={{ borderColor: "var(--line)" }}>
+            {RECEIPTS.map((r) => (
+              <li key={r.key} className="flex items-center gap-3 border-b py-3" style={{ borderColor: "var(--line)" }}><r.icon size={18} /><span className="w-20 font-mono text-xs font-bold tracking-widest">{r.name}</span><span style={{ color: "var(--muted)" }}>{r.q}</span></li>
+            ))}
+          </ul>
         </div>
         <div className="relative">
-          <span className="anim-bob absolute -left-6 -top-5 z-10 hidden rounded-md border-2 border-emerald-600 bg-white px-2 py-0.5 font-mono text-xs font-black uppercase tracking-widest text-emerald-700 shadow lg:block" style={{ ["--r" as string]: "-10deg" }}>Fit ✓</span>
-          <span className="anim-bob absolute -right-4 top-24 z-10 hidden rounded-md border-2 border-sky-600 bg-white px-2 py-0.5 font-mono text-xs font-black uppercase tracking-widest text-sky-700 shadow lg:block" style={{ ["--r" as string]: "8deg", animationDelay: "1.2s" }}>Person ✓</span>
-          <span className="anim-bob absolute -bottom-4 left-10 z-10 hidden rounded-md border-2 border-amber-600 bg-white px-2 py-0.5 font-mono text-xs font-black uppercase tracking-widest text-amber-700 shadow lg:block" style={{ ["--r" as string]: "-5deg", animationDelay: "2.1s" }}>Timing ✓</span>
+          <span className="anim-bob absolute -left-5 -top-4 z-10 hidden border-2 border-emerald-600 bg-white px-2 py-0.5 font-mono text-xs font-black uppercase tracking-widest text-emerald-700 lg:block" style={{ ["--r" as string]: "-10deg" }}>Fit ✓</span>
+          <span className="anim-bob absolute -right-4 top-24 z-10 hidden border-2 border-sky-600 bg-white px-2 py-0.5 font-mono text-xs font-black uppercase tracking-widest text-sky-700 lg:block" style={{ ["--r" as string]: "8deg", animationDelay: "1.2s" }}>Person ✓</span>
+          <span className="anim-bob absolute -bottom-4 left-10 z-10 hidden border-2 border-amber-600 bg-white px-2 py-0.5 font-mono text-xs font-black uppercase tracking-widest text-amber-700 lg:block" style={{ ["--r" as string]: "-5deg", animationDelay: "2.1s" }}>Timing ✓</span>
           <ReceiptDemo />
         </div>
       </section>
 
       {/* Game */}
-      <section className="mx-auto max-w-6xl px-6 pb-14">
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-rose-600">Mini game</div>
-            <h2 className="font-serif text-3xl font-semibold">Receipt Check: would you send it?</h2>
-            <p className="text-neutral-600">Eight leads, three lives. Build a streak for a score multiplier. Watch for negative signals.</p>
-          </div>
-        </div>
-        <ReceiptGame onXp={onGameXp} onConsole={onConsole} />
-      </section>
-
-      {/* Quests */}
-      <section className="mx-auto max-w-6xl px-6 pb-14">
-        <h2 className="font-serif text-3xl font-semibold">Quests</h2>
-        <p className="text-neutral-600">Earn XP by using the real product. Progress is read from this workspace, so nothing unlocks unless you actually did it.</p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {computeQuests(state).map((q) => (
-            <button key={q.id} type="button" onClick={onConsole} className={`group rounded-2xl border p-4 text-left transition-all hover:-translate-y-1 hover:shadow-lg ${q.done ? "border-emerald-300 bg-emerald-50" : "border-neutral-200 bg-white"}`}>
-              <div className="flex items-center justify-between">
-                <span className={`flex h-7 w-7 items-center justify-center rounded-full ${q.done ? "bg-emerald-600 text-white" : "bg-neutral-100 text-neutral-400"}`}>{q.done ? <Check size={14} /> : <Zap size={13} />}</span>
-                <span className={`rounded-full px-2 py-0.5 font-mono text-xs ${q.done ? "bg-emerald-600 text-white" : "bg-amber-100 text-amber-800"}`}>+{q.xp} XP</span>
-              </div>
-              <div className="mt-2 text-sm font-semibold">{q.title}</div>
-              <div className="text-xs text-neutral-600">{q.hint}</div>
-              {q.progress && !q.done && <div className="mt-1 font-mono text-[11px] text-neutral-500">{q.progress}</div>}
-            </button>
-          ))}
+      <section style={{ background: "var(--ink)" }} className="px-6 py-20 text-white">
+        <div className="mx-auto max-w-6xl">
+          <div className="eyebrow" style={{ color: "#c9c5ba" }}>Mini game · eight leads, three lives</div>
+          <h2 className="display mt-3 text-5xl">Receipt Check: <span style={{ color: "var(--hl)" }}>would you send it?</span></h2>
+          <p className="mt-3 max-w-xl text-neutral-300">Build a streak for a score multiplier. Watch for negative signals.</p>
+          <div className="mt-8 border border-neutral-700"><ReceiptGame onXp={onGameXp} /></div>
         </div>
       </section>
 
-      {/* Live strip */}
-      <section className="border-y border-neutral-200 bg-white">
-        <div className="mx-auto grid max-w-6xl grid-cols-2 gap-px px-6 md:grid-cols-4">
-          {stats.map((s) => (
-            <div key={s.label} className="py-5">
-              <div className="font-mono text-3xl font-semibold tabular-nums">{s.value}</div>
-              <div className="text-xs uppercase tracking-wider text-neutral-500">{s.label}</div>
-            </div>
-          ))}
-        </div>
-        <p className="mx-auto max-w-6xl px-6 pb-3 text-xs text-neutral-500">{hasRun ? "Live numbers from this workspace." : "Run the demo and these fill in with live numbers from this workspace."}</p>
-      </section>
-
-      {/* How it works */}
-      <section className="mx-auto max-w-6xl px-6 py-14">
-        <h2 className="font-serif text-3xl font-semibold">How it works</h2>
-        <p className="mt-1 text-neutral-600">Six steps, each one visible in the console. Click a step.</p>
-        <div className="mt-6 grid gap-6 lg:grid-cols-[18rem_1fr]">
-          <ol className="space-y-1">
+      {/* The system */}
+      <section className="mx-auto max-w-6xl px-6 py-20">
+        <div className="eyebrow">The system</div>
+        <h2 className="display mt-3 text-5xl">From first signal to approved message.</h2>
+        <div className="mt-10 grid border lg:grid-cols-[19rem_1fr]" style={{ borderColor: "var(--line)" }}>
+          <ol className="border-b lg:border-b-0 lg:border-r" style={{ borderColor: "var(--line)" }}>
             {STEPS.map((s, i) => (
-              <li key={s.title}>
+              <li key={s.title} className="border-b last:border-b-0" style={{ borderColor: "var(--line)" }}>
                 <button type="button" onClick={() => { setStep(i); setAuto(false); }} aria-current={i === step}
-                  className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors ${i === step ? "bg-neutral-900 text-white" : "hover:bg-neutral-100"}`}>
-                  <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-mono text-xs ${i === step ? "bg-white text-neutral-900" : "bg-neutral-200 text-neutral-700"}`}>{i + 1}</span>
-                  <span><span className="block text-sm font-semibold">{s.title}</span><span className={`block text-xs ${i === step ? "text-neutral-300" : "text-neutral-500"}`}>{s.line}</span></span>
+                  className={`flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors ${i === step ? "bg-[#131313] text-white" : "bg-white hover:bg-[#f4f1e7]"}`}>
+                  <span className="font-mono text-xs opacity-60">0{i + 1}</span>
+                  <span><span className="block text-sm font-semibold tracking-tight">{s.title}</span><span className={`block text-xs ${i === step ? "text-neutral-300" : "text-neutral-500"}`}>{s.line}</span></span>
                 </button>
               </li>
             ))}
           </ol>
-          <div className="flex min-h-[15rem] flex-col justify-between rounded-2xl border border-neutral-200 bg-white p-7">
-            <div>
-              <S.icon size={28} className="text-neutral-900" />
-              <h3 className="mt-3 font-serif text-2xl font-semibold">{step + 1}. {S.title}: {S.line}</h3>
-              <p className="mt-2 max-w-2xl text-neutral-700">{S.body}</p>
+          <div className="relative flex min-h-[18rem] flex-col justify-between bg-[#fffdf7] p-8">
+            <span className="crop tr" /><span className="crop bl" />
+            <div key={step} className="anim-slide-up">
+              <S.icon size={30} strokeWidth={1.5} />
+              <h3 className="display mt-4 text-3xl">{S.title}. <span className="hl">{S.line}</span></h3>
+              <p className="mt-3 max-w-2xl text-lg" style={{ color: "var(--muted)" }}>{S.body}</p>
             </div>
-            <div className="mt-5 flex items-center gap-3">
-              <div className="flex gap-1.5">{STEPS.map((_, i) => <span key={i} className={`h-1.5 rounded-full transition-all ${i === step ? "w-6 bg-neutral-900" : "w-1.5 bg-neutral-300"}`} />)}</div>
-              <button className="ml-auto inline-flex items-center gap-1 text-sm font-semibold text-neutral-900 hover:underline" onClick={onConsole}>See it in the console <ArrowRight size={14} /></button>
+            <div className="mt-6 flex items-center gap-3">
+              <div className="barcode w-40" />
+              <span className="eyebrow">Step 0{step + 1} / 0{STEPS.length}</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* What you get */}
-      <section className="border-t border-neutral-200 bg-neutral-50">
-        <div className="mx-auto grid max-w-6xl gap-4 px-6 py-14 md:grid-cols-3">
-          {[
-            { icon: FileCheck2, title: "Proof on every row", body: "Score, tier and three receipt chips on every lead. Hover a chip for the evidence and its source." },
-            { icon: Ban, title: "A Held back list", body: "Leads that fail the gate are listed with the exact receipt they are missing, so nothing disappears silently." },
-            { icon: Coins, title: "Metered and audited", body: "Enrichment, outreach and graph queries are metered as credits. Every AI and human action lands in the audit log." },
-          ].map((f) => (
-            <div key={f.title} className="rounded-2xl border border-neutral-200 bg-white p-6 transition-transform hover:-translate-y-0.5 hover:shadow-md">
-              <f.icon size={22} />
-              <h3 className="mt-3 font-serif text-xl font-semibold">{f.title}</h3>
-              <p className="mt-1 text-sm text-neutral-600">{f.body}</p>
-            </div>
-          ))}
+      {/* Quests */}
+      <section className="border-y px-6 py-20" style={{ background: "var(--band)", borderColor: "var(--line)" }}>
+        <div className="mx-auto max-w-6xl">
+          <div className="eyebrow">Quests</div>
+          <h2 className="display mt-3 text-5xl">Earn XP by doing the real work.</h2>
+          <p className="mt-3 max-w-xl text-lg" style={{ color: "var(--muted)" }}>Progress is read from this workspace, so nothing unlocks unless you actually did it.</p>
+          <div className="mt-8 grid border-l border-t sm:grid-cols-2 lg:grid-cols-4" style={{ borderColor: "var(--line)" }}>
+            {computeQuests(state).map((q) => (
+              <div key={q.id} className={`group border-b border-r p-4 text-left transition-colors ${q.done ? "bg-emerald-50" : "bg-white hover:bg-[#fffdf7]"}`} style={{ borderColor: "var(--line)" }}>
+                <div className="flex items-center justify-between">
+                  <span className={`flex h-7 w-7 items-center justify-center rounded-full ${q.done ? "bg-emerald-600 text-white" : "bg-neutral-100 text-neutral-400"}`}>{q.done ? <Check size={14} /> : <Zap size={13} />}</span>
+                  <span className={`px-2 py-0.5 font-mono text-xs ${q.done ? "bg-emerald-600 text-white" : "bg-[#f6dc5c] text-black"}`}>+{q.xp} XP</span>
+                </div>
+                <div className="mt-3 text-base font-semibold tracking-tight">{q.title}</div>
+                <div className="text-xs" style={{ color: "var(--muted)" }}>{q.hint}</div>
+                {q.progress && !q.done && <div className="mt-1 font-mono text-[11px] text-neutral-500">{q.progress}</div>}
+                <div className="barcode mt-3 opacity-20 transition-opacity group-hover:opacity-60" />
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Footer CTA */}
-      <section className="mx-auto max-w-6xl px-6 py-14 text-center">
-        <h2 className="font-serif text-4xl font-bold tracking-tight">See the receipts for yourself.</h2>
-        <div className="mt-5 flex flex-wrap justify-center gap-3">
-          <button className={`${cta} bg-neutral-900 text-white hover:bg-neutral-700`} onClick={onDemo} disabled={busy}>{busy ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />} Run the live demo</button>
-          <button className={`${cta} border border-neutral-300 bg-white hover:bg-neutral-50`} onClick={onConsole}>Open console <ArrowRight size={16} /></button>
+      <section className="relative px-6 py-24 text-center">
+        <span className="crop bl" /><span className="crop br" />
+        <div className="eyebrow">Start</div>
+        <h2 className="display mx-auto mt-3 max-w-3xl text-6xl">See the <span className="hl">receipts</span> for yourself.</h2>
+        <div className="mt-8 flex flex-wrap justify-center gap-2">
+          <button className="btn-ink" onClick={onDemo} disabled={busy}>{busy ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />} Run the live demo <ArrowRight size={15} /></button>
         </div>
-        <div className="mt-6 flex flex-wrap justify-center gap-1.5">{Object.entries(state.integrations).map(([k, v]) => <ModeBadge key={k} mode={v} label={k} />)}</div>
+        <div className="mt-8 flex flex-wrap justify-center gap-1.5">{Object.entries(state.integrations).map(([k, v]) => <ModeBadge key={k} mode={v} label={k} />)}</div>
       </section>
     </div>
   );

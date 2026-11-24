@@ -114,22 +114,24 @@ export default function Home() {
 
   return (
     <Tooltip.Provider>
-      <nav className="sticky top-0 z-30 flex items-center gap-4 border-b border-neutral-200 bg-white/90 px-6 py-2 backdrop-blur">
-        <button className="flex items-center gap-2 font-serif text-xl font-bold tracking-tight" onClick={() => setView("product")}><Receipt size={20} /> Receipts</button>
-        <div role="tablist" aria-label="View" className="flex rounded-lg bg-neutral-100 p-1">
+      <nav className="sticky top-0 z-30 flex h-[3.25rem] items-stretch border-b bg-white/95 backdrop-blur" style={{ borderColor: "var(--line)" }}>
+        <button className="flex items-center gap-2 border-r px-5 text-[15px] font-semibold tracking-tight" style={{ borderColor: "var(--line)" }} onClick={() => setView("product")}><Receipt size={17} /> Receipts</button>
+        <div role="tablist" aria-label="View" className="flex items-stretch">
           {([["product", "Product", Sparkles], ["console", "Console", LayoutDashboard]] as const).map(([v, label, Icon]) => (
             <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)}
-              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${view === v ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500 hover:text-neutral-900"}`}>
+              className={`flex items-center gap-1.5 border-r px-4 text-sm transition-colors ${view === v ? "bg-[#f4f1e7] font-semibold" : "text-neutral-600 hover:bg-[#faf8f1]"}`} style={{ borderColor: "var(--line)" }}>
               <Icon size={14} /> {label}
               {v === "console" && working && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />}
-              {v === "console" && !working && state.leads.length > 0 && <span className="rounded-full bg-neutral-200 px-1.5 text-[11px] text-neutral-700">{state.leads.length}</span>}
+              {v === "console" && !working && state.leads.length > 0 && <span className="bg-[#131313] px-1.5 font-mono text-[11px] text-white">{state.leads.length}</span>}
             </button>
           ))}
         </div>
-        <span className="ml-auto"><QuestLog state={state} gameXp={gameXp} /></span>
-        {view === "product" && <button className={btnPrimary} onClick={() => setView("console")}>Open console</button>}
+        <span className="ml-auto flex items-center px-3"><QuestLog state={state} gameXp={gameXp} /></span>
+        <button className="flex items-center gap-2 bg-[#131313] px-5 text-sm font-medium text-white hover:bg-[#333]" onClick={runDemo} disabled={working}>
+          Run demo <span aria-hidden>→</span>
+        </button>
       </nav>
-      {view === "product" && <Landing state={state} busy={working} onDemo={runDemo} onConsole={() => setView("console")} onGameXp={setGameXp} />}
+      {view === "product" && <Landing state={state} busy={working} onDemo={runDemo} onGameXp={setGameXp} />}
       <div className={view === "console" ? "flex min-h-screen" : "hidden"}>
         <div className="min-w-0 flex-1">
           <header className="border-b-2 border-neutral-900 px-6 pb-4 pt-5">

@@ -19,7 +19,7 @@ const shouldSend = (r: Round) => r.fit[0] && r.person[0] && r.timing[0] && !r.tr
 const RANKS: [number, string][] = [[1500, "Chief Receipts Officer"], [1000, "Proof Collector"], [500, "Signal Scout"], [0, "Receipt Rookie"]];
 export const GAME_XP_KEY = "receipts.gameXp";
 
-export function ReceiptGame({ onXp, onConsole }: { onXp: (xp: number) => void; onConsole: () => void }) {
+export function ReceiptGame({ onXp }: { onXp: (xp: number) => void }) {
   const [i, setI] = useState(0);
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -85,9 +85,9 @@ export function ReceiptGame({ onXp, onConsole }: { onXp: (xp: number) => void; o
           <div className="mt-1 font-serif text-4xl font-bold">{rank}</div>
           <p className="mt-2 text-neutral-300">{correct} of {ROUNDS.length} calls right · {score} points · best {Math.max(best, score)}</p>
           <p className="mt-1 font-mono text-sm text-amber-300">+{Math.round(score / 10)} XP added to your quest log</p>
+          <p className="mt-1 text-sm text-neutral-400">Now do it for real: switch to the Console tab at the top.</p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <button onClick={restart} className="inline-flex items-center gap-2 rounded-lg border border-neutral-600 px-4 py-2.5 text-sm font-semibold hover:bg-neutral-800"><RotateCcw size={15} /> Play again</button>
-            <button onClick={onConsole} className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-neutral-900 hover:bg-neutral-200">Now do it for real in the console</button>
           </div>
         </div>
       </div>

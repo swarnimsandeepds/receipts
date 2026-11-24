@@ -1,0 +1,11 @@
+node_modules
+.next
+.env.local
+.env
+data/*.json
+next-env.d.ts
+.next-export
+out
+python/data
+__pycache__
+.venv

@@ -2,7 +2,7 @@
 
 No receipt, no outreach.
 
-An AI GTM engine that only drafts outreach when it can prove three things with sources: why this account (FIT), why this person (PERSON), why today (TIMING). Leads missing a receipt go to "Held back" with the reason.
+An AI GTM engine that only drafts outreach when it can prove three things with sources: why this account (FIT), why this person (PERSON), why today (TIMING). Leads missing a receipt go to "Held back" with the reason. That's what we do at receipts.
 
 ## Run it: Python backend (recommended)
 

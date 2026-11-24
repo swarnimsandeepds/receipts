@@ -20,9 +20,17 @@ def llm_configured():
     return bool(env("ANTHROPIC_API_KEY") or env("OPENAI_API_KEY"))
 
 
+LLM_FAILED = False  # set when the last LLM call errored, so the header badge does not claim "live"
+
+
+def llm_working():
+    return llm_configured() and not LLM_FAILED
+
+
 def llm_json(system, prompt, required, mock_fn):
     """Ask an LLM for one JSON object, check the required keys, fall back to mock on any failure.
     Returns (data, mode, error)."""
+    global LLM_FAILED
     if not llm_configured():
         return mock_fn(), "mock", None
     try:
@@ -42,8 +50,10 @@ def llm_json(system, prompt, required, mock_fn):
         missing = [k for k in required if k not in data]
         if missing:
             raise ValueError(f"missing keys: {missing}")
+        LLM_FAILED = False
         return data, "live", None
     except Exception as e:  # noqa: BLE001
+        LLM_FAILED = True
         return mock_fn(), "mock", str(e)[:200]
 
 

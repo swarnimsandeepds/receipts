@@ -3,6 +3,9 @@ import type { ZodType } from "zod";
 import type { Mode } from "./types";
 
 export const llmConfigured = () => !!(process.env.ANTHROPIC_API_KEY || process.env.OPENAI_API_KEY);
+// Set when the last LLM call errored, so the header badge does not claim "live".
+const flag = globalThis as unknown as { __llmFailed?: boolean };
+export const llmWorking = () => llmConfigured() && !flag.__llmFailed;
 
 function extractJson(text: string): unknown {
   const start = text.search(/[\[{]/);
@@ -39,8 +42,10 @@ export async function llmJson<T>(opts: { schema: ZodType<T>; system: string; pro
   try {
     const text = await callLlm(opts.system + "\nReturn only one valid JSON object. No prose, no markdown fences.", opts.prompt);
     const data = opts.schema.parse(extractJson(text));
+    flag.__llmFailed = false;
     return { data, mode: "live" };
   } catch (e) {
+    flag.__llmFailed = true;
     return { data: opts.mock(), mode: "mock", error: e instanceof Error ? e.message.slice(0, 200) : "LLM call failed" };
   }
 }

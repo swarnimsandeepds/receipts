@@ -35,7 +35,7 @@ def client_state():
     with LOCK:
         m = lambda b: "live" if b else "mock"  # noqa: E731
         snapshot = {**STATE, "graph": core.build_graph(), "integrations": {
-            "LLM": m(pipeline.llm_configured()),
+            "LLM": m(pipeline.llm_working()),
             "Moss": m(moss_index.configured()), "Flexprice": m(core.env("FLEXPRICE_API_KEY"))}}
         return json.loads(json.dumps(snapshot))  # deep copy while holding the lock
 

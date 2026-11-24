@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getState } from "./store";
 import { buildGraph } from "./graph";
-import { llmConfigured } from "./llm";
+import { llmWorking } from "./llm";
 import { mossConfigured } from "./moss";
 import type { ClientState, Mode } from "./types";
 
@@ -13,7 +13,7 @@ export function clientState(): ClientState {
     ...s,
     graph: buildGraph(s),
     integrations: {
-      LLM: m(llmConfigured()),
+      LLM: m(llmWorking()),
       Moss: m(mossConfigured()), Flexprice: m(!!process.env.FLEXPRICE_API_KEY),
     },
   };

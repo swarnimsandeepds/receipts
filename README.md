@@ -44,6 +44,7 @@ Open http://localhost:3000 and click **Load demo**. Both versions work with zero
 
 1. **Load demo**: prefills intake with Moss, generates the ICP, runs discovery, enriches the top 5 leads. Watch the Agent thinking panel on the right.
 2. **Leads**: score, tier, three receipt chips (hover for the source), "Held back" list, competitor map.
+3. **Signal search**: ask in plain language, Moss answers as you type with its retrieval time.
 3. Click a lead: receipts with sources, warm intro path, Moss retrieval time, 3 step sequence. **Approve / Edit / Reject**.
 4. **Enrich** two or three more leads until credits hit zero: the credit wall appears. **Top up**.
 5. **Pipeline**: the approved lead moved to Contacted. Drag cards. AI and Rep badges.
@@ -87,6 +88,7 @@ app/api/enrich               POST enrich one lead + draft sequence (402 when out
 app/api/review               POST approve / edit / reject a message
 app/api/kanban               POST move a card
 app/api/graph                POST warm_intro or displacement query (metered)
+app/api/search               POST semantic search across all indexed signals (Moss)
 app/api/billing              POST top up
 app/mock-source/[id]         local page for mock citations
 

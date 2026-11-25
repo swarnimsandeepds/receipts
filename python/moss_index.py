@@ -87,3 +87,44 @@ def query_company(company, query, top_k=5):
         except Exception:
             pass
     return {"hits": _local_query(company, query, top_k), "ms": round((time.perf_counter() - t0) * 1000, 2), "mode": "mock"}
+
+
+_tried_load = False
+
+
+def _ensure_live():
+    """After a restart the index still exists in Moss. Load it once so search works without re-running discovery."""
+    global _live, _tried_load
+    if _live or _tried_load or not configured():
+        return
+    _tried_load = True
+    try:
+        _run(_get_client().load_index(INDEX), 60)
+        _live = True
+    except Exception:
+        pass
+
+
+def search(query, top_k=8, fallback_docs=None):
+    """Semantic search across every indexed snippet and signal. Returns {hits, ms, mode}."""
+    _ensure_live()
+    t0 = time.perf_counter()
+    if _live:
+        try:
+            from moss import QueryOptions
+            res = _run(_get_client().query(INDEX, query, QueryOptions(top_k=top_k)), 20)
+            hits = [{"text": d.text, "company": (d.metadata or {}).get("company", ""), "sourceUrl": (d.metadata or {}).get("sourceUrl", ""),
+                     "type": (d.metadata or {}).get("type", ""), "score": float(d.score)} for d in res.docs]
+            return {"hits": hits, "ms": round((time.perf_counter() - t0) * 1000, 2), "mode": "live"}
+        except Exception:
+            pass
+    q = set(_tokens(query))
+    hits = []
+    for d in (_local or fallback_docs or []):
+        t = _tokens(d["text"])
+        overlap = len(q & set(t))
+        if overlap:
+            hits.append({"text": d["text"], "company": d["metadata"]["company"], "sourceUrl": d["metadata"]["sourceUrl"],
+                         "type": d["metadata"].get("type", ""), "score": round(min(0.99, overlap / max(3, len(q))), 3)})
+    hits.sort(key=lambda h: -h["score"])
+    return {"hits": hits[:top_k], "ms": round((time.perf_counter() - t0) * 1000, 2), "mode": "mock"}

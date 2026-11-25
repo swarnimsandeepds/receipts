@@ -72,3 +72,38 @@ export async function queryCompany(company: string, query: string, topK = 5): Pr
   const hits = localQuery(company, query, topK);
   return { hits, ms: Math.round((performance.now() - t0) * 100) / 100, mode: "mock" };
 }
+
+let triedLoad = false;
+/** After a restart the index still exists in Moss. Load it once so search works without re-running discovery. */
+async function ensureLive() {
+  if (g.__mossLive || triedLoad || !mossConfigured()) return;
+  triedLoad = true;
+  try { const c = await client(); await withTimeout(c.loadIndex(INDEX), 60000, "moss loadIndex"); g.__mossLive = true; } catch {}
+}
+
+export interface SearchHit { text: string; company: string; sourceUrl: string; type: string; score: number }
+
+/** Semantic search across every indexed snippet and signal. */
+export async function searchAll(query: string, topK = 8, fallbackDocs: MossDoc[] = []): Promise<{ hits: SearchHit[]; ms: number; mode: Mode }> {
+  await ensureLive();
+  const t0 = performance.now();
+  if (g.__mossLive) {
+    try {
+      const c = await client();
+      const res = await withTimeout<{ docs: { text: string; score: number; metadata?: Record<string, string> }[] }>(c.query(INDEX, query, { topK }), 15000, "moss query");
+      const hits = res.docs.map((d) => ({ text: d.text, company: d.metadata?.company ?? "", sourceUrl: d.metadata?.sourceUrl ?? "", type: d.metadata?.type ?? "", score: d.score }));
+      return { hits, ms: Math.round((performance.now() - t0) * 100) / 100, mode: "live" };
+    } catch {}
+  }
+  const q = new Set(tokens(query));
+  const docs = g.__mossLocal?.length ? g.__mossLocal : fallbackDocs;
+  const hits = docs
+    .map((d) => {
+      const overlap = new Set(tokens(d.text).filter((w) => q.has(w))).size;
+      return { text: d.text, company: d.metadata.company, sourceUrl: d.metadata.sourceUrl, type: d.metadata.type, score: Math.min(0.99, overlap / Math.max(3, q.size)) };
+    })
+    .filter((h) => h.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, topK);
+  return { hits, ms: Math.round((performance.now() - t0) * 100) / 100, mode: "mock" };
+}

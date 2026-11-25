@@ -18,11 +18,12 @@ import { CreditMeter } from "@/components/CreditMeter";
 import { Landing } from "@/components/Landing";
 import { QuestLog } from "@/components/QuestLog";
 import { DemoVideo } from "@/components/DemoVideo";
+import { SignalSearch } from "@/components/SignalSearch";
 import { GAME_XP_KEY } from "@/components/ReceiptGame";
 import { ActorBadge, btn, btnPrimary, card, ModeBadge, time } from "@/components/ui";
 
 const EMPTY: Intake = { name: "", product: "", customers: "", pricing: "" };
-const TABS = [["intake", "Intake and ICP"], ["leads", "Leads"], ["queue", "Send queue"], ["pipeline", "Pipeline"], ["graph", "Graph"], ["charts", "Charts"], ["audit", "Audit log"]] as const;
+const TABS = [["intake", "Intake and ICP"], ["leads", "Leads"], ["search", "Signal search"], ["queue", "Send queue"], ["pipeline", "Pipeline"], ["graph", "Graph"], ["charts", "Charts"], ["audit", "Audit log"]] as const;
 
 export default function Home() {
   const [state, setState] = useState<ClientState | null>(null);
@@ -171,6 +172,8 @@ export default function Home() {
             <Tabs.Content value="leads">
               <LeadTable state={state} onOpen={(l) => setOpenLead(l.id)} onEnrich={enrich} enriching={enriching} />
             </Tabs.Content>
+
+            <Tabs.Content value="search"><SignalSearch state={state} onOpen={(l) => setOpenLead(l.id)} /></Tabs.Content>
 
             <Tabs.Content value="queue">
               <h2 className="font-serif text-xl font-semibold">Send queue</h2>

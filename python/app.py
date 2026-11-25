@@ -173,13 +173,27 @@ def post_graph(b):
     return {"result": path}
 
 
+def post_search(b):
+    """Semantic search over all indexed signals (Moss). Only explicit searches are written to the agent feed."""
+    query = (b.get("query") or "").strip()
+    if len(query) < 2:
+        return {"result": {"hits": [], "ms": 0, "mode": "mock"}}
+    with LOCK:
+        docs = [{"text": f"{l['company']}: {sg['text']}", "metadata": {"company": l["company"], "sourceUrl": sg["sourceUrl"], "type": sg["type"]}}
+                for l in STATE["leads"] for sg in l["signals"]]
+    result = moss_index.search(query, int(b.get("topK") or 8), docs)
+    if b.get("log"):
+        feed("moss", f'Moss search: "{query[:60]}" returned {len(result["hits"])} signals.', mode=result["mode"], ms=result["ms"])
+    return {"result": result}
+
+
 def post_billing(_b):
     core.top_up()
     audit("Rep", "Credits topped up", f"{core.TOP_UP} credits added")
 
 
 ROUTES = {("POST", "/api/icp"): post_icp, ("PUT", "/api/icp"): put_icp, ("POST", "/api/discovery"): post_discovery, ("POST", "/api/enrich"): post_enrich,
-          ("POST", "/api/review"): post_review, ("POST", "/api/kanban"): post_kanban, ("POST", "/api/graph"): post_graph, ("POST", "/api/billing"): post_billing,
+          ("POST", "/api/review"): post_review, ("POST", "/api/kanban"): post_kanban, ("POST", "/api/graph"): post_graph, ("POST", "/api/search"): post_search, ("POST", "/api/billing"): post_billing,
           ("GET", "/api/state"): lambda _b: None, ("DELETE", "/api/state"): lambda _b: core.reset()}
 
 MOCK_PAGE = """<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{title}</title>

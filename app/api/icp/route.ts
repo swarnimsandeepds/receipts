@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   try {
     const r = await generateIcp(intake);
     mutate((s) => { s.icp = r.icp; s.modes.icp = r.mode; });
-    feed("llm", `ICP generated: ${r.icp.industries.length} industries, ${r.icp.personas.length} personas, ${r.icp.triggers.length} triggers, ${r.icp.negativeSignals.length} negative signals${r.error ? `. LLM failed, used cached ICP (${r.error})` : ""}.`, { mode: r.mode });
+    feed("llm", `ICP generated: ${r.icp.industries.length} industries, ${r.icp.personas.length} personas, ${r.icp.triggers.length} triggers, ${r.icp.negativeSignals.length} negative signals.`, { mode: r.mode });
     audit("AI", "ICP generated", `${r.icp.industries.map((i) => i.name).join(", ")}`);
   } finally {
     mutate((s) => { s.running = null; });

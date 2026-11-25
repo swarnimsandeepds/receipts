@@ -102,7 +102,7 @@ export function ReviewDrawer({ lead, onClose, onReview, onEnrich, enriching }: {
                 <div className="flex gap-3">{lead.contact.linkedin && <Src href={lead.contact.linkedin}>LinkedIn</Src>}<span className="text-xs text-neutral-500">{lead.domain}</span></div>
               </div>
 
-              <h3 className="mt-5 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Outreach sequence <ModeBadge mode={lead.outreachMode} label="LLM" />{lead.enriched && <span className="normal-case">Template {lead.template}</span>}</h3>
+              <h3 className="mt-5 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Outreach sequence {lead.outreachMode === "live" && <ModeBadge mode={lead.outreachMode} label="LLM" />}{lead.enriched && <span className="normal-case">Template {lead.template}</span>}</h3>
               {!lead.enriched ? (
                 <div className="mt-2 rounded-lg border border-dashed border-neutral-300 p-4 text-center">
                   <p className="text-sm text-neutral-600">Enrich this lead to add contact details and draft the 3 step sequence.</p>

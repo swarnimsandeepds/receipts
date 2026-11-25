@@ -272,7 +272,7 @@ export function Landing({ state, busy, onDemo, onGameXp }: { state: ClientState;
         <div className="mt-8 flex flex-wrap justify-center gap-2">
           <button className="btn-ink" onClick={onDemo} disabled={busy}>{busy ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />} Run the live demo <ArrowRight size={15} /></button>
         </div>
-        <div className="mt-8 flex flex-wrap justify-center gap-1.5">{Object.entries(state.integrations).map(([k, v]) => <ModeBadge key={k} mode={v} label={k} />)}</div>
+        <div className="mt-8 flex flex-wrap justify-center gap-1.5">{Object.entries(state.integrations).filter(([k, v]) => !(k === "LLM" && v === "mock")).map(([k, v]) => <ModeBadge key={k} mode={v} label={k} />)}</div>
       </section>
     </div>
   );

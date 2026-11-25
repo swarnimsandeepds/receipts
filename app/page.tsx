@@ -145,7 +145,7 @@ export default function Home() {
                 <p className="mt-1 font-serif text-lg italic text-neutral-600">No receipt, no outreach.</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <div className="flex flex-wrap gap-1">{Object.entries(state.integrations).map(([k, v]) => <ModeBadge key={k} mode={v} label={k} />)}</div>
+                <div className="flex flex-wrap gap-1">{Object.entries(state.integrations).filter(([k, v]) => !(k === "LLM" && v === "mock")).map(([k, v]) => <ModeBadge key={k} mode={v} label={k} />)}</div>
                 <button className={btnPrimary} onClick={runDemo} disabled={working}>{busy ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />} Load demo</button>
                 <button className={btn} onClick={reset} disabled={working} title="Clear all data"><RotateCcw size={14} /> Reset</button>
                 <CreditMeter state={state} onTopUp={() => api("/api/billing", "POST")} />

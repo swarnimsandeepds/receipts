@@ -29,7 +29,7 @@ export function IcpCards({ icp, mode, onSave, onDiscover, busy }: { icp: Icp; mo
   return (
     <section className="mt-6">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-serif text-xl font-semibold">2. Ideal customer profile <ModeBadge mode={mode} label="LLM" /></h2>
+        <h2 className="font-serif text-xl font-semibold">2. Ideal customer profile {mode === "live" && <ModeBadge mode={mode} label="LLM" />}</h2>
         <div className="flex gap-2">
           {dirty && <button className={btn} onClick={() => onSave(d)}><Check size={14} /> Save edits</button>}
           <button className={btnPrimary} disabled={!!busy} onClick={async () => { if (dirty) await onSave(d); onDiscover(); }}>

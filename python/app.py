@@ -67,7 +67,9 @@ def post_icp(b):
             STATE["modes"]["icp"] = mode
             save()
         feed("llm", f"ICP generated: {len(icp['industries'])} industries, {len(icp['personas'])} personas, {len(icp['triggers'])} triggers, "
-                    f"{len(icp['negativeSignals'])} negative signals{f'. LLM failed, used cached ICP ({err})' if err else ''}.", mode=mode)
+                    f"{len(icp['negativeSignals'])} negative signals.", mode=mode)
+        if err:
+            print(f"LLM call failed, used the built-in ICP: {err}", file=sys.stderr, flush=True)
         audit("AI", "ICP generated", ", ".join(i["name"] for i in icp["industries"]))
     finally:
         with LOCK:

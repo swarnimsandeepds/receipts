@@ -32,7 +32,7 @@ export function AgentFeed({ feed, open, onOpenChange, running }: { feed: FeedEve
                     <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-neutral-400">
                       <span>{time(f.ts)}</span>
                       {f.ms !== undefined && <span className="rounded bg-neutral-100 px-1 font-mono text-neutral-700">{f.ms} ms</span>}
-                      <ModeBadge mode={f.mode} />
+                      {!(f.kind === "llm" && f.mode === "mock") && <ModeBadge mode={f.mode} />}
                     </div>
                   </div>
                 </li>

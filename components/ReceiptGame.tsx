@@ -76,7 +76,7 @@ export function ReceiptGame({ onXp }: { onXp: (xp: number) => void }) {
   if (over) {
     const rank = RANKS.find(([min]) => score >= min)![1];
     return (
-      <div className="relative overflow-hidden rounded-3xl bg-neutral-900 text-white shadow-2xl">
+      <div className="relative overflow-hidden rounded-3xl bg-[#0b0b0b] text-white shadow-2xl">
         {hud}
         {lives > 0 && <Confetti count={40} />}
         <div className="anim-pop px-6 py-10 text-center">
@@ -96,7 +96,7 @@ export function ReceiptGame({ onXp }: { onXp: (xp: number) => void }) {
 
   const rows: [string, [boolean, string]][] = [["FIT", round.fit], ["PERSON", round.person], ["TIMING", round.timing]];
   return (
-    <div className="overflow-hidden rounded-3xl bg-neutral-900 text-white shadow-2xl">
+    <div className="overflow-hidden rounded-3xl bg-[#0b0b0b] text-white shadow-2xl">
       {hud}
       <div className="grid gap-6 p-5 md:grid-cols-[1fr_15rem]">
         <div key={i} className={`relative rounded-2xl bg-white p-5 text-neutral-900 anim-slide-up ${verdict && !verdict.right ? "anim-shake" : ""}`}>

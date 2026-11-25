@@ -14,7 +14,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
-      <body className="text-neutral-900 antialiased">{children}</body>
+      <body className="text-neutral-900 antialiased">
+        <div className="bg-fx" aria-hidden><span /><span /><span /><span /></div>
+        {children}
+      </body>
     </html>
   );
 }

@@ -199,8 +199,8 @@ ROUTES = {("POST", "/api/icp"): post_icp, ("PUT", "/api/icp"): put_icp, ("POST",
           ("GET", "/api/state"): lambda _b: None, ("DELETE", "/api/state"): lambda _b: core.reset()}
 
 MOCK_PAGE = """<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{title}</title>
-<style>body{{font-family:system-ui,sans-serif;max-width:42rem;margin:0 auto;padding:2.5rem;color:#171717}}.b{{display:inline-block;background:#fef3c7;color:#92400e;font-size:.75rem;font-weight:500;padding:.15rem .5rem;border-radius:.25rem}}
-h1{{font-family:Georgia,serif;font-size:1.9rem;margin:1rem 0 .25rem}}.m{{color:#737373;font-size:.875rem}}.t{{font-size:1.125rem;line-height:1.7;margin-top:1.5rem}}</style></head>
+<style>html{{background:#050505}}body{{font-family:system-ui,sans-serif;max-width:42rem;margin:0 auto;padding:2.5rem;color:#f5f5f4}}.b{{display:inline-block;background:#fef3c7;color:#92400e;font-size:.75rem;font-weight:500;padding:.15rem .5rem;border-radius:.25rem}}
+h1{{font-family:Georgia,serif;font-size:1.9rem;margin:1rem 0 .25rem}}.m{{color:#a8a29e;font-size:.875rem}}.t{{font-size:1.125rem;line-height:1.7;margin-top:1.5rem}}</style></head>
 <body><div class="b">Mock source: seeded demo data, not a real article</div><h1>{title}</h1><p class="m">{meta}</p><p class="t">{text}</p>
 <p class="m" style="margin-top:2.5rem">Accounts and signals in this demo come from a seeded dataset, so citations open this local page.</p></body></html>"""
 

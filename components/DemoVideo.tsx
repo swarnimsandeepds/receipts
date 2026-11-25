@@ -129,7 +129,7 @@ export function DemoVideo({ open, onClose, pipelineBusy }: { open: boolean; onCl
     <Dialog.Root open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-[90] bg-black/70" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-[100] w-[min(56rem,94vw)] -translate-x-1/2 -translate-y-1/2 bg-[#131313] text-white shadow-2xl focus:outline-none" aria-describedby={undefined}>
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-[100] w-[min(56rem,94vw)] -translate-x-1/2 -translate-y-1/2 border border-neutral-700 bg-[#0b0b0b] text-white shadow-2xl focus:outline-none" aria-describedby={undefined}>
           <div className="flex items-center gap-3 border-b border-neutral-800 px-4 py-2.5">
             <span className="h-2 w-2 animate-pulse rounded-full bg-rose-500" />
             <Dialog.Title className="text-sm font-semibold tracking-tight">How Receipts works</Dialog.Title>

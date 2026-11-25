@@ -191,7 +191,7 @@ export function Landing({ state, busy, onDemo, onGameXp }: { state: ClientState;
       </section>
 
       {/* Game */}
-      <section style={{ background: "var(--ink)" }} className="px-6 py-20 text-white">
+      <section style={{ background: "rgba(0,0,0,0.55)" }} className="border-y border-neutral-800 px-6 py-20 text-white">
         <div className="mx-auto max-w-6xl">
           <div className="eyebrow" style={{ color: "#c9c5ba" }}>Mini game · eight leads, three lives</div>
           <h2 className="display mt-3 text-5xl">Receipt Check: <span style={{ color: "var(--hl)" }}>would you send it?</span></h2>
